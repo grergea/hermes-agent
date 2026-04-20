@@ -91,7 +91,7 @@ from pathlib import Path
 
 def _get_hermes_task_log_script() -> Optional[Path]:
     """Locate hermes-task-log.py script, or None if not found."""
-    script_home = Path.home() / "hermes" / "scripts" / "hermes-task-log.py"
+    script_home = Path.home() / ".hermes" / "scripts" / "hermes-task-log.py"
     if script_home.exists():
         return script_home
     # Fallback: search PATH

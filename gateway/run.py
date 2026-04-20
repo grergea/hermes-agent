@@ -563,7 +563,7 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
 
 def _log_gateway_response(message_text: str, response: str, duration: float, failed: bool) -> None:
     """Fire-and-forget: log a completed gateway turn to hermes-task-log."""
-    script = Path.home() / "hermes" / "scripts" / "hermes-task-log.py"
+    script = Path.home() / ".hermes" / "scripts" / "hermes-task-log.py"
     if not script.exists():
         return
     goal = (message_text or "").strip()[:200]
