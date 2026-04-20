@@ -21,6 +21,7 @@ import re
 import shlex
 import sys
 import signal
+import subprocess
 import tempfile
 import threading
 import time
@@ -28,7 +29,28 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional, Any, List
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Hanja (Chinese character) filter — applied to all agent responses before delivery
+# -----------------------------------------------------------------------------
+from hermes_filters import (
+    HANJA_REPLACEMENTS,
+    JAPANESE_REPLACEMENTS,
+    HANJA_PATTERN,
+    HIRAGANA_PATTERN,
+    _REMOVE_REMAINING_CJK,
+    filter_text,
+    auto_heal_filter,
+)
+import hermes_filters as _hermes_filters_module
+
+def _filter_hanja_global(text: str) -> str:
+    """전달된 텍스트에서 한자를 한글 또는 영어로 변환합니다. 코드 블록 내용은 보호됩니다."""
+    if not text:
+        return text
+    # Use module reference so importlib.reload in auto_heal_filter picks up the new function
+    return _hermes_filters_module.filter_text(text)
+
+
 # SSL certificate auto-detection for NixOS and other non-standard systems.
 # Must run BEFORE any HTTP library (discord, aiohttp, etc.) is imported.
 # ---------------------------------------------------------------------------
@@ -480,6 +502,30 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
         pass
 
     return None
+
+
+def _log_gateway_response(message_text: str, response: str, duration: float, failed: bool) -> None:
+    """Fire-and-forget: log a completed gateway turn to hermes-task-log."""
+    script = Path.home() / "hermes" / "scripts" / "hermes-task-log.py"
+    if not script.exists():
+        return
+    goal = (message_text or "").strip()[:200]
+    summary = (response or "").strip()[:500]
+    if not goal:
+        return
+    status = "failed" if failed else "completed"
+    try:
+        subprocess.run(
+            [sys.executable, str(script),
+             "--goal", goal,
+             "--status", status,
+             "--duration", str(int(duration)),
+             "--summary", summary,
+             "--mode", "MANUAL"],
+            capture_output=True, timeout=15, check=False,
+        )
+    except Exception:
+        pass
 
 
 def _format_gateway_process_notification(evt: dict) -> "str | None":
@@ -3339,7 +3385,19 @@ class GatewayRunner:
 
         # Build the context prompt to inject
         context_prompt = build_session_context_prompt(context, redact_pii=_redact_pii)
-        
+
+        # B방식: 이전 응답에서 한자가 감지된 경우, 모델이 한자 없이 다시 출력하도록 교정 요청 주입
+        if getattr(session_entry, 'needs_hanja_correction', False):
+            session_entry.needs_hanja_correction = False  # 플래그 리셋
+            correction_prompt = (
+                "\n\n[System note: Your previous response contained Hanja (Chinese characters). "
+                "Korean users cannot read Hanja. "
+                "Please regenerate your last response in pure Korean (Hangul) only, "
+                "replacing all Hanja with their Korean equivalents. "
+                "Do not mention this note in your reply.]\n\n"
+            )
+            context_prompt = correction_prompt + context_prompt
+
         # If the previous session expired and was auto-reset, prepend a notice
         # so the agent knows this is a fresh conversation (not an intentional /reset).
         if getattr(session_entry, 'was_auto_reset', False):
@@ -3853,7 +3911,14 @@ class GatewayRunner:
                 **hook_ctx,
                 "response": (response or "")[:500],
             })
-            
+
+            # Log completed turn to hermes-task-log (fire-and-forget, daemon thread)
+            threading.Thread(
+                target=_log_gateway_response,
+                args=(message_text, response, _response_time, bool(agent_result.get("failed"))),
+                daemon=True,
+            ).start()
+
             # Check for pending process watchers (check_interval on background processes)
             try:
                 from tools.process_registry import process_registry
@@ -3970,17 +4035,49 @@ class GatewayRunner:
                         )
             
             # Token counts and model are now persisted by the agent directly.
-            # Keep only last_prompt_tokens here for context-window tracking and
-            # compression decisions.
-            self.session_store.update_session(
-                session_entry.session_key,
-                last_prompt_tokens=agent_result.get("last_prompt_tokens", 0),
-            )
+            # Keep only last_prompt_tokens here for context-window tracking.
+            # Note: needs_hanja_correction is persisted AFTER the filter check (see below).
 
             # Auto voice reply: send TTS audio before the text response
             _already_sent = bool(agent_result.get("already_sent"))
             if self._should_send_voice_reply(event, response, agent_messages, already_sent=_already_sent):
                 await self._send_voice_reply(event, response)
+
+            # Hanja filter — strip any remaining Hanja characters before delivery.
+            # Also runs for streaming case (already_sent path below).
+            response = _filter_hanja_global(response)
+
+            # B방식 — 필터 후 잔여 한자/일본어 자동 방어
+            remaining_hanja = HANJA_PATTERN.findall(response)
+            remaining_jp = HIRAGANA_PATTERN.findall(response)
+            if remaining_hanja or remaining_jp:
+                what = "Hanja" if remaining_hanja else "Japanese"
+                chars = remaining_hanja or remaining_jp
+                logger.warning(
+                    "[Retry] remaining %s detected after filter: %s. "
+                    "Auto-healing + retrying...",
+                    what, chars[:5],  # log first 5 chars
+                )
+                # Auto-heal: add unknown chars to filter, reload module, retry
+                auto_heal_filter(set(remaining_hanja), set(remaining_jp))
+                response = _filter_hanja_global(response)
+                # Check again after auto-heal
+                remaining_after = HANJA_PATTERN.findall(response)
+                remaining_jp_after = HIRAGANA_PATTERN.findall(response)
+                if remaining_after or remaining_jp_after:
+                    logger.warning(
+                        "[Retry] still leaking after auto-heal: %s %s. "
+                        "Applying Unicode fallback deletion before delivery.",
+                        remaining_after[:5], remaining_jp_after[:5],
+                    )
+                    # Unicode fallback: delete any remaining CJK/Kana unconditionally
+                    response = _REMOVE_REMAINING_CJK.sub('', response)
+                    session_entry.needs_hanja_correction = True
+                else:
+                    logger.info("[Retry] auto-heal succeeded — no more leakage")
+            else:
+                # No remaining Hanja/Japanese — all clean
+                pass
 
             # If streaming already delivered the response, extract and
             # deliver any MEDIA: files before returning None.  Streaming
@@ -4000,7 +4097,20 @@ class GatewayRunner:
                         await self._deliver_media_from_response(
                             response, event, _media_adapter,
                         )
+                # Persist flag before returning (streaming case)
+                self.session_store.update_session(
+                    session_entry.session_key,
+                    last_prompt_tokens=agent_result.get("last_prompt_tokens", 0),
+                    needs_hanja_correction=session_entry.needs_hanja_correction,
+                )
                 return None
+
+            # Persist needs_hanja_correction for non-streaming case
+            self.session_store.update_session(
+                session_entry.session_key,
+                last_prompt_tokens=agent_result.get("last_prompt_tokens", 0),
+                needs_hanja_correction=session_entry.needs_hanja_correction,
+            )
 
             return response
             

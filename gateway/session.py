@@ -372,7 +372,12 @@ class SessionEntry:
     # this session (create a new session_id) so the user starts fresh.
     # Set by /stop to break stuck-resume loops (#7536).
     suspended: bool = False
-    
+
+    # Set when Hanja is detected after filtering — the next turn will
+    # inject a self-correction prompt to ask the model to regenerate
+    # without Hanja before responding to the new user message.
+    needs_hanja_correction: bool = False
+
     def to_dict(self) -> Dict[str, Any]:
         result = {
             "session_key": self.session_key,
@@ -392,6 +397,7 @@ class SessionEntry:
             "cost_status": self.cost_status,
             "memory_flushed": self.memory_flushed,
             "suspended": self.suspended,
+            "needs_hanja_correction": self.needs_hanja_correction,
         }
         if self.origin:
             result["origin"] = self.origin.to_dict()
@@ -429,6 +435,7 @@ class SessionEntry:
             cost_status=data.get("cost_status", "unknown"),
             memory_flushed=data.get("memory_flushed", False),
             suspended=data.get("suspended", False),
+            needs_hanja_correction=data.get("needs_hanja_correction", False),
         )
 
 
@@ -770,6 +777,7 @@ class SessionStore:
         self,
         session_key: str,
         last_prompt_tokens: int = None,
+        needs_hanja_correction: bool = None,
     ) -> None:
         """Update lightweight session metadata after an interaction."""
         with self._lock:
@@ -780,6 +788,8 @@ class SessionStore:
                 entry.updated_at = _now()
                 if last_prompt_tokens is not None:
                     entry.last_prompt_tokens = last_prompt_tokens
+                if needs_hanja_correction is not None:
+                    entry.needs_hanja_correction = needs_hanja_correction
                 self._save()
 
     def suspend_session(self, session_key: str) -> bool:

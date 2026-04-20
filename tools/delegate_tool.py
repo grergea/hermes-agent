@@ -81,6 +81,62 @@ DEFAULT_MAX_ITERATIONS = 50
 _HEARTBEAT_INTERVAL = 30  # seconds between parent activity heartbeats during delegation
 DEFAULT_TOOLSETS = ["terminal", "file", "web"]
 
+# ---------------------------------------------------------------------------
+# hermes-task-log integration
+# ---------------------------------------------------------------------------
+import shutil
+import subprocess
+from pathlib import Path
+
+
+def _get_hermes_task_log_script() -> Optional[Path]:
+    """Locate hermes-task-log.py script, or None if not found."""
+    script_home = Path.home() / "hermes" / "scripts" / "hermes-task-log.py"
+    if script_home.exists():
+        return script_home
+    # Fallback: search PATH
+    found = shutil.which("hermes-task-log.py")
+    return Path(found) if found else None
+
+
+def _call_hermes_task_log(
+    goal: str,
+    status: str,
+    duration: float,
+    summary: Optional[str],
+) -> None:
+    """Fire-and-forget call to hermes-task-log.py.
+
+    Logs a subagent result to hermes-agent-log/YYYY-MM-DD.md.
+    Failures are silently swallowed -- logging must never break delegation.
+    """
+    script = _get_hermes_task_log_script()
+    if script is None:
+        logger.debug("hermes-task-log.py not found, skipping log")
+        return
+
+    # Truncate fields to avoid命令行 length limits
+    goal_trunc = goal[:200] if goal else "unknown"
+    summary_trunc = (summary or "no summary")[:500]
+
+    try:
+        subprocess.run(
+            [
+                sys.executable or "python3",
+                str(script),
+                "--goal", f"[Delegate] {goal_trunc}",
+                "--status", status,
+                "--duration", str(int(duration)),
+                "--summary", summary_trunc,
+            ],
+            capture_output=True,
+            timeout=15,
+            check=False,
+        )
+    except Exception as exc:
+        # Never let logging break delegation
+        logger.debug("hermes-task-log.py call failed: %s", exc)
+
 
 def check_delegate_requirements() -> bool:
     """Delegation has no external requirements -- always available."""
@@ -563,11 +619,16 @@ def _run_single_child(
         if status == "failed":
             entry["error"] = result.get("error", "Subagent did not produce a response.")
 
+        # Log to hermes-task-log (fire-and-forget, don't block on failure)
+        _call_hermes_task_log(goal, status, duration, summary)
+
         return entry
 
     except Exception as exc:
         duration = round(time.monotonic() - child_start, 2)
         logging.exception(f"[subagent-{task_index}] failed")
+        # Log failure to hermes-task-log
+        _call_hermes_task_log(goal, "error", duration, f"Exception: {exc}")
         return {
             "task_index": task_index,
             "status": "error",

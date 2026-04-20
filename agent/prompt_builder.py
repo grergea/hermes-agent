@@ -141,6 +141,22 @@ DEFAULT_AGENT_IDENTITY = (
     "Be targeted and efficient in your exploration and investigations."
 )
 
+# Korean language purity rule — injected into all Korean-user sessions
+KOREAN_LANGUAGE_RULE = (
+    "\n\n# CRITICAL: Korean-Only Language Rule\n"
+    "YOU MUST RESPOND IN KOREAN (HANGUL) ONLY. This is a non-negotiable hard requirement.\n"
+    "STRICTLY PROHIBITED in your output: Chinese characters (汉字/漢字), "
+    "Hiragana (ひらがな), Katakana (カタカナ). Zero exceptions.\n"
+    "All technical terms must use Korean Hangul or Latin alphabet only "
+    "(e.g. system→시스템, cache→캐시, server→서버, error→오류).\n"
+    "Every character of your response must be: Korean Hangul, Latin alphabet, "
+    "Arabic numerals, or standard punctuation. Any other script is a violation.\n"
+    "\n"
+    "당신은 반드시 한국어(한글)로만 응답해야 합니다. 이것은 절대적 규칙입니다.\n"
+    "한자(汉字/漢字), 히라가나(ひらがな), 카타카나(カタカナ) 사용을 전면 금지합니다.\n"
+    "모든 기술 용어는 한글 또는 영문 알파벳으로만 표기하세요.\n"
+)
+
 MEMORY_GUIDANCE = (
     "You have persistent memory across sessions. Save durable facts using the memory "
     "tool: user preferences, environment details, tool quirks, and stable conventions. "
