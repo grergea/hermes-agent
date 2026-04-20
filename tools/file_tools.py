@@ -657,6 +657,13 @@ def patch_tool(mode: str = "replace", path: str = None, old_string: str = None,
                 return tool_error("path required")
             if old_string is None or new_string is None:
                 return tool_error("old_string and new_string required")
+            # Hanja/Japanese filter — .md 파일만 적용
+            if path.endswith(".md"):
+                try:
+                    from hermes_filters import filter_text as _filter_text
+                    new_string = _filter_text(new_string)
+                except ImportError:
+                    pass
             result = file_ops.patch_replace(path, old_string, new_string, replace_all)
         elif mode == "patch":
             if not patch:
