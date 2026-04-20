@@ -194,6 +194,9 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('环境', '환경'),
     ('环境构', '환경 구성'),
     ('建构', '구축'),
+    ('切换系统模式', '시스템 모드 전환'),
+    ('切换', '전환'),
+    ('模式', '방식'),
     ('强制', '강제'),
     ('替换', '치환'),
     ('速度', '속도'),
@@ -824,6 +827,18 @@ def auto_heal_filter(
     # Insert Hanja entries before the closing of HANJA_REPLACEMENTS
     if new_hanja:
         lines = _insert_entry("# AUTOHEAL:HANJA_END", new_hanja)
+    ('接', '인'),   # auto-heal
+    ('直', '?'),   # auto-heal
+    ('仿', '?'),   # auto-heal
+    ('人', '?'),   # auto-heal
+    ('服', '서'),   # auto-heal
+    ('客', '?'),   # auto-heal
+    ('間', '?'),   # auto-heal
+    ('模', '모'),   # auto-heal
+    ('牙', '?'),   # auto-heal
+    ('定', '?'),   # auto-heal
+    ('蓝', '?'),   # auto-heal
+    ('設', '?'),   # auto-heal
     ('复', '구'),   # auto-heal
     ('合', '합'),   # auto-heal
     ('字', '?'),   # auto-heal
@@ -837,6 +852,7 @@ def auto_heal_filter(
     # Insert Japanese entries before the closing of JAPANESE_REPLACEMENTS
     if new_jp:
         lines = _insert_entry("# AUTOHEAL:JAPANESE_END", new_jp)
+    ('の', '른'),   # auto-heal
     ('ら', '?'),   # auto-heal
     ('カ', '?'),   # auto-heal
     ('ひ', '?'),   # auto-heal
