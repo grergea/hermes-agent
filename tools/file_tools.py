@@ -600,6 +600,13 @@ def write_file_tool(path: str, content: str, task_id: str = "default") -> str:
     sensitive_err = _check_sensitive_path(path)
     if sensitive_err:
         return tool_error(sensitive_err)
+    # Hanja/Japanese filter — .md 파일만 적용 (코드·설정 파일 제외)
+    if path.endswith(".md"):
+        try:
+            from hermes_filters import filter_text as _filter_text
+            content = _filter_text(content)
+        except ImportError:
+            pass
     try:
         stale_warning = _check_file_staleness(path, task_id)
         file_ops = _get_file_ops(task_id)
