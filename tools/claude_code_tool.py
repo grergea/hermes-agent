@@ -3,13 +3,13 @@ Claude Code Tool — Hermes Gateway 연동
 
 !cc <메시지> 명령으로 Claude Code CLI subprocess를 호출합니다.
 - 세션 유지: 채널별 session_id 저장 (cc_sessions.json)
-- 컨텍스트 전달: hot.md(볼트 상태) + 최근 Hermes 대화 → --append-system-prompt
+- 컨텍스트 전달: hot.md(볼트 상태) → --append-system-prompt
 - 세션 만료 자동 복구: session_id 무효 시 새 세션으로 재시도
+- hot.md 업데이트는 Hermes !hot 스킬(update-hot-cache)로 수행
 """
 
 import json
 import logging
-import re
 import subprocess
 import threading
 from datetime import datetime
@@ -68,34 +68,6 @@ def _load_hot_cache() -> str:
     return parts[2].strip() if len(parts) >= 3 else text.strip()
 
 
-def _update_hot_cache_hermes_section(recent_msgs: list) -> None:
-    """hot.md의 '다음 세션 컨텍스트' 섹션 내용을 최신 Hermes 대화로 교체합니다."""
-    if not _HOT_CACHE_PATH.exists() or not recent_msgs:
-        return
-    try:
-        content = _HOT_CACHE_PATH.read_text(encoding="utf-8")
-        now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        summary_lines = "\n".join(f"- {m}" for m in recent_msgs[-10:])
-        new_section_body = f"[Hermes Slack 대화 - {now}]\n{summary_lines}\n"
-        # summary_lines는 recent_msgs[-10:] 기준으로 구성
-
-        target = "## 다음 세션 컨텍스트"
-        if target not in content:
-            content += f"\n{target}\n{new_section_body}"
-        else:
-            idx = content.index(target)
-            # 다음 ## 섹션 또는 파일 끝까지를 섹션 범위로 확정
-            next_sec = content.find("\n## ", idx + len(target))
-            before = content[:idx]
-            after = content[next_sec:] if next_sec != -1 else ""
-            # 섹션 전체를 새 내용으로 교체 (누적 없음)
-            content = before + target + "\n\n" + new_section_body + after
-
-        _HOT_CACHE_PATH.write_text(content, encoding="utf-8")
-    except Exception as e:
-        logger.debug("hot.md Hermes 섹션 업데이트 실패: %s", e)
-
-
 # ---------------------------------------------------------------------------
 # 메인 실행
 # ---------------------------------------------------------------------------
@@ -103,15 +75,10 @@ def _update_hot_cache_hermes_section(recent_msgs: list) -> None:
 def run(
     session_key: str,
     prompt: str,
-    recent_msgs: Optional[list] = None,
 ) -> tuple:
     """Claude Code subprocess 실행. (response_text, session_id) 반환."""
 
-    # 1. hot.md에 Hermes 컨텍스트 기록
-    if recent_msgs:
-        _update_hot_cache_hermes_section(recent_msgs)
-
-    # 2. hot.md 읽어 시스템 컨텍스트 구성
+    # 1. hot.md 읽어 시스템 컨텍스트 구성
     hot_cache = _load_hot_cache()
     _now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
     _base_ctx = (
@@ -125,12 +92,12 @@ def run(
         else ""
     )
 
-    # 3. 저장된 세션 ID 조회
+    # 2. 저장된 세션 ID 조회
     with _lock:
         sessions = _load_sessions()
     session_id = sessions.get(session_key)
 
-    # 4. subprocess 실행 (세션 resume 또는 신규)
+    # 3. subprocess 실행 (세션 resume 또는 신규)
     response, new_session_id = _execute(prompt, session_id, system_ctx)
 
     # session_id 만료 시 새 세션으로 재시도
@@ -138,7 +105,7 @@ def run(
         logger.info("!cc: session_id 만료 — 새 세션으로 재시도")
         response, new_session_id = _execute(prompt, None, system_ctx)
 
-    # 5. 세션 ID 저장
+    # 4. 세션 ID 저장
     if new_session_id:
         with _lock:
             sessions = _load_sessions()

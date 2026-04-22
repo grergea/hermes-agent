@@ -3106,25 +3106,6 @@ class GatewayRunner:
             if not _cc_prompt:
                 return "사용법: `!cc <메시지>` — Claude Code에 작업 위임\n세션 초기화: `!cc-reset`"
 
-            # 최근 Hermes 대화 수집 (hot.md Hermes 섹션 업데이트용)
-            _cc_recent: list = []
-            try:
-                _cc_entry = self.session_store.get_or_create_session(source)
-                _cc_history = self.session_store.load_transcript(_cc_entry.session_id)
-                for _cc_msg in _cc_history[-10:]:
-                    _cc_role = _cc_msg.get("role", "")
-                    _cc_content = _cc_msg.get("content", "")
-                    if isinstance(_cc_content, list):
-                        _cc_content = " ".join(
-                            c.get("text", "") for c in _cc_content
-                            if isinstance(c, dict) and c.get("type") == "text"
-                        )
-                    if _cc_content and _cc_role in ("user", "assistant"):
-                        _cc_prefix = "사용자" if _cc_role == "user" else "어시스턴트"
-                        _cc_recent.append(f"{_cc_prefix}: {str(_cc_content)[:500]}")
-            except Exception as _cc_hist_err:
-                logger.debug("!cc 대화 이력 로드 실패: %s", _cc_hist_err)
-
             # 비동기 전송을 위해 이벤트 루프와 어댑터를 캡처
             _cc_adapter = self.adapters.get(source.platform)
             _cc_chat_id = source.chat_id
@@ -3138,12 +3119,11 @@ class GatewayRunner:
 
             _cc_key_snap = _quick_key
             _cc_prompt_snap = _cc_prompt
-            _cc_recent_snap = _cc_recent
 
             def _cc_bg_worker() -> None:
                 from tools.claude_code_tool import run as _cc_run
                 try:
-                    _cc_resp, _ = _cc_run(_cc_key_snap, _cc_prompt_snap, _cc_recent_snap)
+                    _cc_resp, _ = _cc_run(_cc_key_snap, _cc_prompt_snap)
                 except Exception as _e:
                     _cc_resp = f"❌ Claude Code 오류: {_e}"
                 asyncio.run_coroutine_threadsafe(_cc_send(_cc_resp), _cc_loop)
