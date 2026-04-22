@@ -3121,7 +3121,7 @@ class GatewayRunner:
                         )
                     if _cc_content and _cc_role in ("user", "assistant"):
                         _cc_prefix = "사용자" if _cc_role == "user" else "어시스턴트"
-                        _cc_recent.append(f"{_cc_prefix}: {str(_cc_content)[:200]}")
+                        _cc_recent.append(f"{_cc_prefix}: {str(_cc_content)[:500]}")
             except Exception as _cc_hist_err:
                 logger.debug("!cc 대화 이력 로드 실패: %s", _cc_hist_err)
 

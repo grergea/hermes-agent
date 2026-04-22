@@ -75,8 +75,9 @@ def _update_hot_cache_hermes_section(recent_msgs: list) -> None:
     try:
         content = _HOT_CACHE_PATH.read_text(encoding="utf-8")
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
-        summary_lines = "\n".join(f"- {m}" for m in recent_msgs[-5:])
+        summary_lines = "\n".join(f"- {m}" for m in recent_msgs[-10:])
         new_section_body = f"[Hermes Slack 대화 - {now}]\n{summary_lines}\n"
+        # summary_lines는 recent_msgs[-10:] 기준으로 구성
 
         target = "## 다음 세션 컨텍스트"
         if target not in content:
@@ -112,8 +113,14 @@ def run(
 
     # 2. hot.md 읽어 시스템 컨텍스트 구성
     hot_cache = _load_hot_cache()
-    system_ctx = (
-        f"[Obsidian 볼트 컨텍스트 - 최근 세션 정보]\n{hot_cache}"
+    _now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    _base_ctx = (
+        f"현재 날짜/시간: {_now_str}\n"
+        f"사용자: 이상훈 (grergea@gmail.com)\n"
+        f"볼트 경로: {_VAULT_DIR}\n"
+    )
+    system_ctx = _base_ctx + (
+        f"\n[Obsidian 볼트 컨텍스트 - 최근 세션 정보]\n{hot_cache}"
         if hot_cache
         else ""
     )
