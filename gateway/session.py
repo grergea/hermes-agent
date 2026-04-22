@@ -378,10 +378,10 @@ class SessionEntry:
     # Set by /stop to break stuck-resume loops (#7536).
     suspended: bool = False
 
-    # Set when Hanja is detected after filtering — the next turn will
-    # inject a self-correction prompt to ask the model to regenerate
-    # without Hanja before responding to the new user message.
-    needs_hanja_correction: bool = False
+    # Set when a non-Korean script (Hanja, Cyrillic, etc.) is detected after
+    # filtering — the next turn injects a self-correction prompt so the model
+    # regenerates in pure Korean. Value: "hanja" | "cyrillic" | None.
+    needs_script_correction: Optional[str] = None
 
     # When True the session was interrupted by a gateway restart/shutdown
     # drain timeout, but recovery is still expected.  Unlike ``suspended``,
@@ -414,7 +414,7 @@ class SessionEntry:
             "cost_status": self.cost_status,
             "memory_flushed": self.memory_flushed,
             "suspended": self.suspended,
-            "needs_hanja_correction": self.needs_hanja_correction,
+            "needs_script_correction": self.needs_script_correction,
             "resume_pending": self.resume_pending,
             "resume_reason": self.resume_reason,
             "last_resume_marked_at": (
@@ -467,7 +467,10 @@ class SessionEntry:
             cost_status=data.get("cost_status", "unknown"),
             memory_flushed=data.get("memory_flushed", False),
             suspended=data.get("suspended", False),
-            needs_hanja_correction=data.get("needs_hanja_correction", False),
+            needs_script_correction=(
+                data.get("needs_script_correction")
+                or ("hanja" if data.get("needs_hanja_correction") else None)
+            ),
             resume_pending=data.get("resume_pending", False),
             resume_reason=data.get("resume_reason"),
             last_resume_marked_at=last_resume_marked_at,
@@ -826,7 +829,7 @@ class SessionStore:
         self,
         session_key: str,
         last_prompt_tokens: int = None,
-        needs_hanja_correction: bool = None,
+        needs_script_correction: Optional[str] = None,
     ) -> None:
         """Update lightweight session metadata after an interaction."""
         with self._lock:
@@ -837,8 +840,8 @@ class SessionStore:
                 entry.updated_at = _now()
                 if last_prompt_tokens is not None:
                     entry.last_prompt_tokens = last_prompt_tokens
-                if needs_hanja_correction is not None:
-                    entry.needs_hanja_correction = needs_hanja_correction
+                if needs_script_correction is not None:
+                    entry.needs_script_correction = needs_script_correction
                 self._save()
 
     def suspend_session(self, session_key: str) -> bool:

@@ -3959,14 +3959,18 @@ class GatewayRunner:
         # Build the context prompt to inject
         context_prompt = build_session_context_prompt(context, redact_pii=_redact_pii)
 
-        # B방식: 이전 응답에서 한자가 감지된 경우, 모델이 한자 없이 다시 출력하도록 교정 요청 주입
-        if getattr(session_entry, 'needs_hanja_correction', False):
-            session_entry.needs_hanja_correction = False  # 플래그 리셋
+        # B/C방식: 이전 응답에서 비한글 문자가 감지된 경우, 교정 요청 주입
+        _script_correction = getattr(session_entry, 'needs_script_correction', None)
+        if _script_correction:
+            session_entry.needs_script_correction = None  # 플래그 리셋
+            if _script_correction == 'cyrillic':
+                _script_desc = 'Cyrillic (Russian/Slavic) characters'
+            else:
+                _script_desc = 'Hanja (Chinese characters)'
             correction_prompt = (
-                "\n\n[System note: Your previous response contained Hanja (Chinese characters). "
-                "Korean users cannot read Hanja. "
-                "Please regenerate your last response in pure Korean (Hangul) only, "
-                "replacing all Hanja with their Korean equivalents. "
+                f"\n\n[System note: Your previous response contained {_script_desc}. "
+                "Korean users cannot read these characters. "
+                "Please regenerate your last response in pure Korean (Hangul) only. "
                 "Do not mention this note in your reply.]\n\n"
             )
             context_prompt = correction_prompt + context_prompt
@@ -4679,7 +4683,7 @@ class GatewayRunner:
             
             # Token counts and model are now persisted by the agent directly.
             # Keep only last_prompt_tokens here for context-window tracking.
-            # Note: needs_hanja_correction is persisted AFTER the filter check (see below).
+            # Note: needs_script_correction is persisted AFTER the filter check (see below).
 
             # Auto voice reply: send TTS audio before the text response
             _already_sent = bool(agent_result.get("already_sent"))
@@ -4715,7 +4719,7 @@ class GatewayRunner:
                     )
                     # Unicode fallback: delete any remaining CJK/Kana unconditionally
                     response = _REMOVE_REMAINING_CJK.sub('', response)
-                    session_entry.needs_hanja_correction = True
+                    session_entry.needs_script_correction = "hanja"
                 else:
                     logger.info("[Retry] auto-heal succeeded — no more leakage")
             else:
@@ -4731,6 +4735,7 @@ class GatewayRunner:
                 )
                 log_cyrillic_chars(set(remaining_cyrillic), context_text=response)
                 response = _REMOVE_CYRILLIC.sub('', response)
+                session_entry.needs_script_correction = "cyrillic"
 
             # If streaming already delivered the response, extract and
             # deliver any MEDIA: files before returning None.  Streaming
@@ -4754,15 +4759,15 @@ class GatewayRunner:
                 self.session_store.update_session(
                     session_entry.session_key,
                     last_prompt_tokens=agent_result.get("last_prompt_tokens", 0),
-                    needs_hanja_correction=session_entry.needs_hanja_correction,
+                    needs_script_correction=session_entry.needs_script_correction,
                 )
                 return None
 
-            # Persist needs_hanja_correction for non-streaming case
+            # Persist needs_script_correction for non-streaming case
             self.session_store.update_session(
                 session_entry.session_key,
                 last_prompt_tokens=agent_result.get("last_prompt_tokens", 0),
-                needs_hanja_correction=session_entry.needs_hanja_correction,
+                needs_script_correction=session_entry.needs_script_correction,
             )
 
             return response
