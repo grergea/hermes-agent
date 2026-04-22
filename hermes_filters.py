@@ -895,3 +895,37 @@ def auto_heal_filter(
     HANJA_REPLACEMENTS = _hm.HANJA_REPLACEMENTS
     JAPANESE_REPLACEMENTS = _hm.JAPANESE_REPLACEMENTS
     logger.info("[Auto-heal] hermes_filters reloaded — new entries live")
+
+def log_cyrillic_chars(chars: set[str], context_text: str = "") -> None:
+    """
+    Persist detected Cyrillic characters to auto_heal_log.json for future analysis.
+    Does NOT modify source code — logging only.
+    """
+    global _auto_heal_log
+
+    if not chars:
+        return
+
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    log = _load_auto_heal_log()
+    if "cyrillic" not in log:
+        log["cyrillic"] = {}
+
+    for ch in chars:
+        snippets = _extract_context_snippets(context_text, ch) if context_text else []
+        if ch not in log["cyrillic"]:
+            log["cyrillic"][ch] = {
+                "first_seen": timestamp,
+                "count": 1,
+                "ctx": snippets,
+            }
+            logger.info("[Cyrillic-log] new char recorded: %r", ch)
+        else:
+            log["cyrillic"][ch]["count"] = log["cyrillic"][ch].get("count", 0) + 1
+            existing_ctx = log["cyrillic"][ch].get("ctx", [])
+            if snippets and len(existing_ctx) < 5:
+                existing_ctx.extend(snippets)
+                log["cyrillic"][ch]["ctx"] = existing_ctx
+
+    _save_auto_heal_log(log)
+    _auto_heal_log = log

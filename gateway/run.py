@@ -42,6 +42,7 @@ from hermes_filters import (
     CYRILLIC_PATTERN,
     _REMOVE_REMAINING_CJK,
     _REMOVE_CYRILLIC,
+    log_cyrillic_chars,
     filter_text,
     auto_heal_filter,
 )
@@ -4728,6 +4729,7 @@ class GatewayRunner:
                     "[Filter] Cyrillic characters detected after filter: %s. Removing...",
                     remaining_cyrillic[:5],
                 )
+                log_cyrillic_chars(set(remaining_cyrillic), context_text=response)
                 response = _REMOVE_CYRILLIC.sub('', response)
 
             # If streaming already delivered the response, extract and
