@@ -641,6 +641,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
 # =============================================================================
 HANJA_PATTERN = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
 HIRAGANA_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
+CYRILLIC_PATTERN = re.compile(r'[\u0400-\u04ff\u0500-\u052f]')
 
 # Fallback: remove ANY remaining CJK/Kana characters not caught by dictionary.
 # This ensures 100% cleanup even for characters missing from HANJA_REPLACEMENTS.
@@ -650,6 +651,12 @@ _REMOVE_REMAINING_CJK = re.compile(
     r'\uf900-\ufaff'    # CJK Compatibility
     r'\u3040-\u309f'    # Hiragana
     r'\u30a0-\u30ff]'   # Katakana
+)
+
+# Fallback: remove Cyrillic characters (no dictionary mapping — always delete).
+_REMOVE_CYRILLIC = re.compile(
+    r'[\u0400-\u04ff'   # Cyrillic
+    r'\u0500-\u052f]'   # Cyrillic Supplement
 )
 
 
@@ -688,6 +695,9 @@ def filter_text(text: str) -> str:
 
     # ---- fallback: delete any remaining CJK/Kana not covered by dictionaries ----
     text = _REMOVE_REMAINING_CJK.sub('', text)
+
+    # ---- remove Cyrillic characters ----
+    text = _REMOVE_CYRILLIC.sub('', text)
 
     # ---- restore code blocks ----
     for key, value in placeholders.items():

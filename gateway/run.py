@@ -39,7 +39,9 @@ from hermes_filters import (
     JAPANESE_REPLACEMENTS,
     HANJA_PATTERN,
     HIRAGANA_PATTERN,
+    CYRILLIC_PATTERN,
     _REMOVE_REMAINING_CJK,
+    _REMOVE_CYRILLIC,
     filter_text,
     auto_heal_filter,
 )
@@ -4718,6 +4720,15 @@ class GatewayRunner:
             else:
                 # No remaining Hanja/Japanese — all clean
                 pass
+
+            # C방식 — 키릴문자 감지 및 제거
+            remaining_cyrillic = CYRILLIC_PATTERN.findall(response)
+            if remaining_cyrillic:
+                logger.warning(
+                    "[Filter] Cyrillic characters detected after filter: %s. Removing...",
+                    remaining_cyrillic[:5],
+                )
+                response = _REMOVE_CYRILLIC.sub('', response)
 
             # If streaming already delivered the response, extract and
             # deliver any MEDIA: files before returning None.  Streaming
