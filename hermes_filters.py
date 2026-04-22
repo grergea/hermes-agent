@@ -398,7 +398,8 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('人', '인'),
     ('間', '간'),
     ('客', '객'),
-], key=lambda x: -len(x[0]))  # AUTOHEAL:HANJA_END
+    # AUTOHEAL:HANJA_END
+], key=lambda x: -len(x[0]))
 
 # =============================================================================
 # Japanese (Hiragana/Katakana) → Korean Hangul replacements
@@ -634,7 +635,8 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ひ', ''),
     ('ナ', ''),
     ('タ', ''),
-], key=lambda x: -len(x[0]))  # AUTOHEAL:JAPANESE_END
+    # AUTOHEAL:JAPANESE_END
+], key=lambda x: -len(x[0]))
 
 # =============================================================================
 # Regex patterns
