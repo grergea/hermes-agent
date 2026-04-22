@@ -115,20 +115,19 @@ def _call_hermes_task_log(
         logger.debug("hermes-task-log.py not found, skipping log")
         return
 
-    # Truncate fields to avoid命令行 length limits
-    goal_trunc = goal[:200] if goal else "unknown"
-    summary_trunc = (summary or "no summary")[:500]
+    # null bytes(FILTER_PH placeholders) 제거 후 절단
+    goal_trunc = (goal or "unknown")[:200]
+    summary_trunc = (summary or "no summary").replace("\x00", "").strip()[:500]
 
     try:
+        payload = json.dumps({
+            "goal": f"[Delegate] {goal_trunc}",
+            "status": status,
+            "duration": int(duration),
+            "summary": summary_trunc,
+        }, ensure_ascii=False)
         subprocess.run(
-            [
-                sys.executable or "python3",
-                str(script),
-                "--goal", f"[Delegate] {goal_trunc}",
-                "--status", status,
-                "--duration", str(int(duration)),
-                "--summary", summary_trunc,
-            ],
+            [sys.executable or "python3", str(script), "--json", payload],
             capture_output=True,
             timeout=15,
             check=False,

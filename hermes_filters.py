@@ -72,8 +72,13 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('测试结果', '테스트 결과'),
     ('问题说明', '문제 설명'),
     ('配置管理', '설정 관리'),
+    # 한글+한자 혼합 복합어 (공백 삽입으로 이름처럼 읽히는 현상 방지)
+    ('이現', '이 현'),       # 이現 → 이현(이름)처럼 읽힘 방지
+    ('이现', '이 현'),
     # 2글자 (한자+한자)
     ('全貌', '전모'),        # 全(전) + 貌(모습)
+    ('出现', '출현'),
+    ('出現', '출현'),
     ('进行', '진행'),
     ('已经', '이미'),
     ('理论', '이론'),       # 실수高频 — 理论/理论上
@@ -196,6 +201,7 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('切换', '전환'),
     ('模式', '방식'),
     ('强制', '강제'),
+    ('限制', '제한'),
     ('替换', '치환'),
     ('速度', '속도'),
     ('优先', '우선'),
@@ -378,6 +384,20 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('不会再', '다시 않을'),
     ('发生', '발생'),
     ('再', '다시'),
+    # === v:false 복합어 패턴 (2026-04-22) ===
+    ('汉字', '한자'),       # Chinese: 漢字
+    ('設定', '설정'),       # settings
+    ('蓝牙', '블루투스'),    # Bluetooth (Chinese)
+    ('直接', '직접'),       # directly
+    # === v:false 단독 문자 (2026-04-22) ===
+    ('汉', '한'),   # 汉字의 汉
+    ('設', '설'),   # 設定의 設
+    ('定', '정'),   # 設定의 定
+    ('直', '직'),   # 直接의 直
+    ('仿', '방'),   # 模仿의 仿
+    ('人', '인'),
+    ('間', '간'),
+    ('客', '객'),
 ], key=lambda x: -len(x[0]))  # AUTOHEAL:HANJA_END
 
 # =============================================================================
@@ -608,6 +628,12 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     # Individual hiragana (for fragment cleanup)
     ('ば', ''),
     ('啊', ''),   # 중국어 감탄사 제거
+    # === v:false 단독 가나 삭제 (2026-04-22) ===
+    ('ら', ''),
+    ('カ', ''),
+    ('ひ', ''),
+    ('ナ', ''),
+    ('タ', ''),
 ], key=lambda x: -len(x[0]))  # AUTOHEAL:JAPANESE_END
 
 # =============================================================================
@@ -731,9 +757,24 @@ def _extract_jp_reading_from_dict(char: str) -> str | None:
     return None
 
 
+def _extract_context_snippets(text: str, char: str, window: int = 35, max_n: int = 2) -> list[str]:
+    """문자 발생 위치 주변 window자 스니펫 반환 (최대 max_n개)."""
+    snippets = []
+    for i, c in enumerate(text):
+        if c == char:
+            start = max(0, i - window)
+            end = min(len(text), i + window + 1)
+            snippet = text[start:end].replace('\n', ' ').strip()
+            snippets.append(snippet)
+            if len(snippets) >= max_n:
+                break
+    return snippets
+
+
 def auto_heal_filter(
     remaining_hanja_chars: set[str],
     remaining_jp_chars: set[str],
+    context_text: str = "",
 ) -> None:
     """
     Detect and auto-add unknown Hanja/Japanese chars to the source file.
@@ -762,11 +803,16 @@ def auto_heal_filter(
         new_hanja.append((ch, fallback))
 
         # Persist to log
-        _auto_heal_log.setdefault("hanja", {})[ch] = {
+        entry: dict = {
             "r": fallback,
             "ts": timestamp,
             "v": reading is not None,   # auto-verified if reading was found
         }
+        if context_text:
+            snippets = _extract_context_snippets(context_text, ch)
+            if snippets:
+                entry["ctx"] = snippets
+        _auto_heal_log.setdefault("hanja", {})[ch] = entry
         logger.info(f"[Auto-heal] Hanja '{ch}' → '{fallback}' "
                     f"({'auto' if reading else '?, please verify'})")
 
@@ -781,11 +827,16 @@ def auto_heal_filter(
         new_jp.append((ch, fallback))
 
         # Persist to log
-        _auto_heal_log.setdefault("japanese", {})[ch] = {
+        entry: dict = {
             "r": fallback,
             "ts": timestamp,
             "v": reading is not None,
         }
+        if context_text:
+            snippets = _extract_context_snippets(context_text, ch)
+            if snippets:
+                entry["ctx"] = snippets
+        _auto_heal_log.setdefault("japanese", {})[ch] = entry
         logger.info(f"[Auto-heal] Japanese '{ch}' → '{fallback}' "
                     f"({'auto' if reading else '?, please verify'})")
 
@@ -806,7 +857,8 @@ def auto_heal_filter(
         result = []
         inserted = False
         for line in reversed(lines):
-            if not inserted and before_marker in line:
+            # endswith 비교: 마커 문자열이 코드 내 문자열 리터럴로 나타나는 라인을 제외
+            if not inserted and line.rstrip().endswith(before_marker):
                 indent = " " * 4
                 for hanja, hangul in entries:
                     result.append(f"{indent}('{hanja}', '{hangul}'),   # auto-heal")
@@ -819,48 +871,10 @@ def auto_heal_filter(
     # Insert Hanja entries before the closing of HANJA_REPLACEMENTS
     if new_hanja:
         lines = _insert_entry("# AUTOHEAL:HANJA_END", new_hanja)
-    ('系', '템'),   # auto-heal
-    ('什', '무'),   # auto-heal
-    ('换', '스'),   # auto-heal
-    ('式', '드'),   # auto-heal
-    ('要', '?'),   # auto-heal
-    ('切', '시'),   # auto-heal
-    ('为', '왜'),   # auto-heal
-    ('统', ' '),   # auto-heal
-    ('么', '떻'),   # auto-heal
-    ('接', '인'),   # auto-heal
-    ('直', '?'),   # auto-heal
-    ('仿', '?'),   # auto-heal
-    ('人', '?'),   # auto-heal
-    ('服', '서'),   # auto-heal
-    ('客', '?'),   # auto-heal
-    ('間', '?'),   # auto-heal
-    ('模', '모'),   # auto-heal
-    ('牙', '?'),   # auto-heal
-    ('定', '?'),   # auto-heal
-    ('蓝', '?'),   # auto-heal
-    ('設', '?'),   # auto-heal
-    ('复', '구'),   # auto-heal
-    ('合', '합'),   # auto-heal
-    ('字', '?'),   # auto-heal
-    ('汉', '?'),   # auto-heal
-    ('增', '강'),   # auto-heal
-    ('生', '생'),   # auto-heal
-    ('新', '데'),   # auto-heal
-    ('再', ' '),   # auto-heal
-    ('发', '발'),   # auto-heal
 
     # Insert Japanese entries before the closing of JAPANESE_REPLACEMENTS
     if new_jp:
         lines = _insert_entry("# AUTOHEAL:JAPANESE_END", new_jp)
-    ('の', '른'),   # auto-heal
-    ('ら', '?'),   # auto-heal
-    ('カ', '?'),   # auto-heal
-    ('ひ', '?'),   # auto-heal
-    ('が', '이'),   # auto-heal
-    ('ナ', '?'),   # auto-heal
-    ('な', '인'),   # auto-heal
-    ('タ', '페'),   # auto-heal
 
     with open(module_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

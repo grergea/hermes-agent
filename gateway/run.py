@@ -563,22 +563,26 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
 
 def _log_gateway_response(message_text: str, response: str, duration: float, failed: bool) -> None:
     """Fire-and-forget: log a completed gateway turn to hermes-task-log."""
+    import json as _json
     script = Path.home() / ".hermes" / "scripts" / "hermes-task-log.py"
     if not script.exists():
         return
     goal = (message_text or "").strip()[:200]
-    summary = (response or "").strip()[:500]
     if not goal:
         return
+    # null bytes(FILTER_PH placeholders) 제거 후 500자 절단
+    summary = (response or "").replace("\x00", "").strip()[:500]
     status = "failed" if failed else "completed"
     try:
+        payload = _json.dumps({
+            "goal": goal,
+            "status": status,
+            "duration": int(duration),
+            "summary": summary,
+            "mode": "MANUAL",
+        }, ensure_ascii=False)
         subprocess.run(
-            [sys.executable, str(script),
-             "--goal", goal,
-             "--status", status,
-             "--duration", str(int(duration)),
-             "--summary", summary,
-             "--mode", "MANUAL"],
+            [sys.executable, str(script), "--json", payload],
             capture_output=True, timeout=15, check=False,
         )
     except Exception:
@@ -3086,6 +3090,64 @@ class GatewayRunner:
                 label = response_text if len(response_text) <= 20 else response_text[:20] + "…"
                 return f"✓ Sent `{label}` to the update process."
 
+        # --- !cc / !cc-reset: Claude Code subprocess 위임 ---
+        _cc_text = (event.text or "").strip()
+
+        if _cc_text == "!cc-reset" or _cc_text.startswith("!cc-reset "):
+            from tools.claude_code_tool import reset_session as _cc_reset_fn
+            _cc_reset_fn(_quick_key)
+            return "✅ Claude Code 세션 초기화 완료."
+
+        if _cc_text.startswith("!cc ") or _cc_text == "!cc":
+            _cc_prompt = _cc_text[4:].strip() if _cc_text.startswith("!cc ") else ""
+            if not _cc_prompt:
+                return "사용법: `!cc <메시지>` — Claude Code에 작업 위임\n세션 초기화: `!cc-reset`"
+
+            # 최근 Hermes 대화 수집 (hot.md Hermes 섹션 업데이트용)
+            _cc_recent: list = []
+            try:
+                _cc_entry = self.session_store.get_or_create_session(source)
+                _cc_history = self.session_store.load_transcript(_cc_entry.session_id)
+                for _cc_msg in _cc_history[-10:]:
+                    _cc_role = _cc_msg.get("role", "")
+                    _cc_content = _cc_msg.get("content", "")
+                    if isinstance(_cc_content, list):
+                        _cc_content = " ".join(
+                            c.get("text", "") for c in _cc_content
+                            if isinstance(c, dict) and c.get("type") == "text"
+                        )
+                    if _cc_content and _cc_role in ("user", "assistant"):
+                        _cc_prefix = "사용자" if _cc_role == "user" else "어시스턴트"
+                        _cc_recent.append(f"{_cc_prefix}: {str(_cc_content)[:200]}")
+            except Exception as _cc_hist_err:
+                logger.debug("!cc 대화 이력 로드 실패: %s", _cc_hist_err)
+
+            # 비동기 전송을 위해 이벤트 루프와 어댑터를 캡처
+            _cc_adapter = self.adapters.get(source.platform)
+            _cc_chat_id = source.chat_id
+            _cc_loop = asyncio.get_running_loop()
+            # 원본 메시지 thread_id 유지 — 일반 Hermes 응답과 동일한 방식
+            _cc_meta = {"thread_id": source.thread_id} if source.thread_id else None
+
+            async def _cc_send(text: str) -> None:
+                if _cc_adapter:
+                    await _cc_adapter.send(_cc_chat_id, text, metadata=_cc_meta)
+
+            _cc_key_snap = _quick_key
+            _cc_prompt_snap = _cc_prompt
+            _cc_recent_snap = _cc_recent
+
+            def _cc_bg_worker() -> None:
+                from tools.claude_code_tool import run as _cc_run
+                try:
+                    _cc_resp, _ = _cc_run(_cc_key_snap, _cc_prompt_snap, _cc_recent_snap)
+                except Exception as _e:
+                    _cc_resp = f"❌ Claude Code 오류: {_e}"
+                asyncio.run_coroutine_threadsafe(_cc_send(_cc_resp), _cc_loop)
+
+            threading.Thread(target=_cc_bg_worker, daemon=True).start()
+            return "⏳ Claude Code 작업 중... (완료 시 결과 전송)"
+
         # PRIORITY handling when an agent is already running for this session.
         # Default behavior is to interrupt immediately so user text/stop messages
         # are handled with minimal latency.
@@ -4637,7 +4699,7 @@ class GatewayRunner:
                     what, chars[:5],  # log first 5 chars
                 )
                 # Auto-heal: add unknown chars to filter, reload module, retry
-                auto_heal_filter(set(remaining_hanja), set(remaining_jp))
+                auto_heal_filter(set(remaining_hanja), set(remaining_jp), context_text=response)
                 response = _filter_hanja_global(response)
                 # Check again after auto-heal
                 remaining_after = HANJA_PATTERN.findall(response)
