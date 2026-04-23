@@ -669,6 +669,24 @@ def patch_tool(mode: str = "replace", path: str = None, old_string: str = None,
             if not patch:
                 return tool_error("patch content required")
             result = file_ops.patch_v4a(patch)
+            # Hanja/Japanese filter — V4A mode: patch string을 직접 파싱하면
+            # patch 형식이 깨질 수 있어 기록 완료 후 .md 파일을 재필터링함.
+            if not result.to_dict().get("error"):
+                _md_paths = [p for p in _paths_to_check if p.endswith(".md")]
+                if _md_paths:
+                    try:
+                        from hermes_filters import filter_text as _filter_text
+                        import os as _os
+                        for _md_p in _md_paths:
+                            if _os.path.exists(_md_p):
+                                with open(_md_p, encoding="utf-8") as _f:
+                                    _raw = _f.read()
+                                _filtered = _filter_text(_raw)
+                                if _filtered != _raw:
+                                    with open(_md_p, "w", encoding="utf-8") as _f:
+                                        _f.write(_filtered)
+                    except (ImportError, OSError):
+                        pass
         else:
             return tool_error(f"Unknown mode: {mode}")
         

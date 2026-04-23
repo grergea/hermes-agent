@@ -237,7 +237,8 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('本', '본'),
     # ('步', '보'),  # 잠정 주석 — '同步' 우선
     ('同步', '동기'),
-    ('同', '동'),
+    ('同一个', '동일한'),   # 同一个条件 → 동일한 조건
+    ('条件', '조건'),       # 条件 (Simplified Chinese)
     ('正', '정상적'),
     ('重', '중'),
     ('经', '경'),
@@ -389,9 +390,19 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('設定', '설정'),       # settings
     ('蓝牙', '블루투스'),    # Bluetooth (Chinese)
     ('直接', '직접'),       # directly
+    # 신규 추가 (2026-04-22) — 문제 패턴 대응
+    ('包含', '포함'),       # 包含内容 → 포함 내용
+    ('條件', '조건'),       # Traditional Chinese: 條件
+    ('作成', '작성'),       # 作成完了 → 작성 완료
     # === v:false 단독 문자 (2026-04-22) ===
     ('汉', '한'),   # 汉字의 汉
     ('設', '설'),   # 設定의 設
+    ('進行', '진행'),   # 복합어 — 진행
+    ('技術', '기술'),   # 복합어 — 기술
+    ('問題', '문제'),   # 복합어 — 문제
+    ('認識', '인식'),   # 복합어 — 인식
+    ('明示', '명시'),   # 복합어 — 명시
+    ('生效', '적용'),   # 복합어 — 적용
     ('定', '정'),   # 設定의 定
     ('直', '직'),   # 直接의 直
     ('仿', '방'),   # 模仿의 仿
@@ -399,6 +410,45 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('間', '간'),
     ('客', '객'),
     # AUTOHEAL:HANJA_END
+    ('繁', '?'),   # auto-heal
+    ('体', '?'),   # auto-heal
+    ('一', '일'),   # auto-heal
+    ('条', '?'),   # auto-heal
+    ('本', '?'),   # auto-heal
+    ('日', '로'),   # auto-heal
+    ('同', '동'),   # auto-heal
+    ('个', '리'),   # auto-heal
+    ('是', '것'),   # auto-heal
+    ('保', '보'),   # auto-heal
+    ('内', ' '),   # auto-heal
+    ('包', '포'),   # auto-heal
+    ('含', '?'),   # auto-heal
+    ('護', '?'),   # auto-heal
+    ('意', '의'),   # 意思(의미), 意図(의도) — 2026-04-22
+    ('條', '?'),   # auto-heal
+    ('成', '료'),   # auto-heal
+    ('思', '사'),   # 意思(의사), 思念(사념) — 2026-04-22
+    ('了', '다'),   # auto-heal
+    ('完', '완'),   # auto-heal
+    ('作', '작'),   # auto-heal
+    ('容', '내'),   # auto-heal
+    ('效', '?'),   # auto-heal
+    ('示', '?'),   # auto-heal
+    ('関', '?'),   # auto-heal
+    ('題', '?'),   # auto-heal
+    ('文', '?'),   # auto-heal
+    ('識', '?'),   # auto-heal
+    ('問', '?'),   # auto-heal
+    ('装', '현'),   # auto-heal
+    ('夹', '?'),   # auto-heal
+    ('実', '구'),   # auto-heal
+    ('件', '포'),   # auto-heal
+    ('浮', '?'),   # auto-heal
+    ('認', '인'),   # auto-heal
+    ('明', '설'),   # auto-heal
+    ('宙', '?'),   # auto-heal
+    ('連', '?'),   # auto-heal
+    ('測', '?'),   # auto-heal
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -543,6 +593,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ファンクション', '펑션'),
     ('.function', '펑션'),
     ('クラス', '클래스'),
+    ('コード', '코드'),     # code
     ('オブジェクト', '오브젝트'),
     ('インターフェース', '인터페이스'),
     ('プロトコル', '프로토콜'),
@@ -636,6 +687,25 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
+    ('つ', '나'),   # auto-heal
+    ('コ', '컨'),   # auto-heal
+    ('ま', '?'),   # auto-heal
+    ('ー', '이'),   # auto-heal
+    ('し', '로'),   # auto-heal
+    ('ュ', '?'),   # auto-heal
+    ('リ', '리'),   # auto-heal
+    ('キ', '서'),   # auto-heal
+    ('メ', '메'),   # auto-heal
+    ('い', '은'),   # auto-heal
+    ('ン', '텍'),   # auto-heal
+    ('た', '?'),   # auto-heal
+    ('ト', '워'),   # auto-heal
+    ('に', '미'),   # auto-heal
+    ('エ', '익'),   # auto-heal
+    ('ク', '스'),   # auto-heal
+    ('クエリ', '쿼리'),   # 복합어 — 쿼리
+    ('宙に浮いた', '떠다니는'),   # 관용구 — 떠다니는
+    ('ド', '문'),   # auto-heal
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -668,13 +738,20 @@ _REMOVE_CYRILLIC = re.compile(
 def filter_text(text: str) -> str:
     """
     Apply Hanja and Japanese replacements to text.
-    Code blocks (```...``` and `...`) are protected and not filtered.
+
+    Code blocks (```...``` and `...`) are intentionally protected and NOT filtered.
+    Design decision: filtering code block content would corrupt code literals,
+    command examples, and variable names that legitimately contain CJK characters
+    (e.g., `grep "進行" file.txt` → `grep "" file.txt`).
+    If this behavior ever needs to change, update the placeholder logic below
+    AND this docstring together.
+
     Returns the filtered text.
     """
     if not text:
         return text
 
-    # ---- protect code blocks ----
+    # ---- protect code blocks (intentional — see docstring above) ----
     placeholders: dict[str, str] = {}
     counter = [0]
 
@@ -701,7 +778,7 @@ def filter_text(text: str) -> str:
     # ---- remove Cyrillic characters ----
     text = _REMOVE_CYRILLIC.sub('', text)
 
-    # ---- restore code blocks ----
+    # ---- restore code blocks (intentionally unfiltered — see docstring) ----
     for key, value in placeholders.items():
         text = text.replace(key, value)
 
