@@ -8,6 +8,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import re
 import importlib
 import logging
@@ -412,14 +413,14 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('間', '간'),
     ('客', '객'),
     # AUTOHEAL:HANJA_END
-    ('興', '?'),   # auto-heal
-    ('趣', '?'),   # auto-heal
-    ('兴', '?'),   # auto-heal
-    ('繁', '?'),   # auto-heal
-    ('体', '?'),   # auto-heal
+    ('興', '흥'),   # auto-heal → 흥미, 흥분
+    ('趣', '취'),   # auto-heal → 취미, 흥취
+    ('兴', ''),   # auto-heal (간체자, 한국어 미사용 → 삭제)
+    ('繁', '번'),   # auto-heal → 번성, 번영
+    ('体', '체'),   # auto-heal → 체력, 단체
     ('一', '일'),   # auto-heal
-    ('条', '?'),   # auto-heal
-    ('本', '?'),   # auto-heal
+    ('条', '조'),   # auto-heal → 조건, 조항
+    ('本', ''),   # auto-heal (메인 섹션 '본' 우선 — dead code)
     ('日', '로'),   # auto-heal
     ('同', '동'),   # auto-heal
     ('个', '리'),   # auto-heal
@@ -427,33 +428,33 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('保', '보'),   # auto-heal
     ('内', ' '),   # auto-heal
     ('包', '포'),   # auto-heal
-    ('含', '?'),   # auto-heal
-    ('護', '?'),   # auto-heal
+    ('含', '함'),   # auto-heal → 함유, 포함
+    ('護', '호'),   # auto-heal → 보호, 호위
     ('意', '의'),   # 意思(의미), 意図(의도) — 2026-04-22
-    ('條', '?'),   # auto-heal
+    ('條', '조'),   # auto-heal → 조건, 조항
     ('成', '료'),   # auto-heal
     ('思', '사'),   # 意思(의사), 思念(사념) — 2026-04-22
     ('了', '다'),   # auto-heal
     ('完', '완'),   # auto-heal
     ('作', '작'),   # auto-heal
     ('容', '내'),   # auto-heal
-    ('效', '?'),   # auto-heal
-    ('示', '?'),   # auto-heal
-    ('関', '?'),   # auto-heal
-    ('題', '?'),   # auto-heal
-    ('文', '?'),   # auto-heal
-    ('識', '?'),   # auto-heal
-    ('問', '?'),   # auto-heal
+    ('效', '효'),   # auto-heal → 효과, 효율
+    ('示', '시'),   # auto-heal → 시범, 지시
+    ('関', '관'),   # auto-heal → 관계, 관련
+    ('題', '제'),   # auto-heal → 문제, 제목
+    ('文', ''),   # auto-heal (메인 섹션 '문' 우선 — dead code)
+    ('識', '식'),   # auto-heal → 인식, 지식
+    ('問', '문'),   # auto-heal → 문제, 질문
     ('装', '현'),   # auto-heal
-    ('夹', '?'),   # auto-heal
+    ('夹', ''),   # auto-heal (한국어 미사용 한자 → 삭제)
     ('実', '구'),   # auto-heal
     ('件', '포'),   # auto-heal
-    ('浮', '?'),   # auto-heal
+    ('浮', '부'),   # auto-heal → 부동, 부력
     ('認', '인'),   # auto-heal
     ('明', '설'),   # auto-heal
-    ('宙', '?'),   # auto-heal
-    ('連', '?'),   # auto-heal
-    ('測', '?'),   # auto-heal
+    ('宙', '주'),   # auto-heal → 우주
+    ('連', '연'),   # auto-heal → 연결, 연속
+    ('測', '측'),   # auto-heal → 측정, 추측
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -496,7 +497,6 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('結果的', '결과적'),
     ('實際上', '실제'),
     # 3글자
-    ('どこ', '어디'),
     ('誰か', '누구'),
     ('何を', '무엇을'),
     ('なぜ', '왜'),
@@ -577,11 +577,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ち', ''),
     ('つ', ''),
     ('て', ''),
-    ('と', ''),
-    ('な', ''),
-    ('に', ''),
     ('ぬ', ''),
-    ('ね', ''),
     ('の', ''),
     # 카타카나 — 영문 Loanwords
     ('セクション', '섹션'),
@@ -692,25 +688,18 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
-    ('つ', '나'),   # auto-heal
     ('コ', '컨'),   # auto-heal
-    ('ま', '?'),   # auto-heal
     ('ー', '이'),   # auto-heal
-    ('し', '로'),   # auto-heal
-    ('ュ', '?'),   # auto-heal
+    ('ュ', ''),   # auto-heal
     ('リ', '리'),   # auto-heal
     ('キ', '서'),   # auto-heal
     ('メ', '메'),   # auto-heal
-    ('い', '은'),   # auto-heal
     ('ン', '텍'),   # auto-heal
-    ('た', '?'),   # auto-heal
     ('ト', '워'),   # auto-heal
-    ('に', '미'),   # auto-heal
     ('エ', '익'),   # auto-heal
     ('ク', '스'),   # auto-heal
     ('クエリ', '쿼리'),   # 복합어 — 쿼리
     ('宙に浮いた', '떠다니는'),   # 관용구 — 떠다니는
-    ('ド', '문'),   # auto-heal
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -758,11 +747,12 @@ def filter_text(text: str) -> str:
 
     # ---- protect code blocks (intentional — see docstring above) ----
     placeholders: dict[str, str] = {}
-    counter = [0]
+    counter = 0
 
     def _ph(value: str) -> str:
-        key = f"\x00FILTER_PH{counter[0]}\x00"
-        counter[0] += 1
+        nonlocal counter
+        key = f"\x00FILTER_PH{counter}\x00"
+        counter += 1
         placeholders[key] = value
         return key
 
@@ -799,9 +789,6 @@ def filter_text(text: str) -> str:
 # - Persistent log (~/.hermes/auto_heal_log.json) survives gateway restarts
 # =============================================================================
 
-import json
-from datetime import datetime
-
 # --- Persistent auto-heal log (survives gateway restarts) ---
 _AUTO_HEAL_LOG_PATH = Path.home() / ".hermes" / "auto_heal_log.json"
 
@@ -822,13 +809,18 @@ def _save_auto_heal_log(log: dict) -> None:
         json.dump(log, f, ensure_ascii=False, indent=2)
 
 _auto_heal_log: dict = _load_auto_heal_log()   # cached in-process
-_AUTO_HEAL_KNOWN: set = set()                   # dedup within process lifetime
 
-# Pre-populate _AUTO_HEAL_KNOWN from persistent log so we don't re-process
-for kind, entries in [("hanja", _auto_heal_log.get("hanja", {})),
-                      ("japanese", _auto_heal_log.get("japanese", {}))]:
-    for ch in entries:
-        _AUTO_HEAL_KNOWN.add(f"{kind}:{ch}")
+
+def _init_known_set() -> set:
+    known: set = set()
+    for kind, entries in [("hanja", _auto_heal_log.get("hanja", {})),
+                          ("japanese", _auto_heal_log.get("japanese", {}))]:
+        for ch in entries:
+            known.add(f"{kind}:{ch}")
+    return known
+
+
+_AUTO_HEAL_KNOWN: set = _init_known_set()   # dedup within process lifetime
 
 
 def _extract_reading_from_dict(char: str) -> str | None:
@@ -893,7 +885,7 @@ def auto_heal_filter(
             continue
         _AUTO_HEAL_KNOWN.add(key)
         reading = _extract_reading_from_dict(ch)
-        fallback = reading if reading else "?"
+        fallback = reading if reading else ""
         new_hanja.append((ch, fallback))
 
         # Persist to log
@@ -917,7 +909,7 @@ def auto_heal_filter(
             continue
         _AUTO_HEAL_KNOWN.add(key)
         reading = _extract_jp_reading_from_dict(ch)
-        fallback = reading if reading else "?"
+        fallback = reading if reading else ""
         new_jp.append((ch, fallback))
 
         # Persist to log
@@ -946,13 +938,12 @@ def auto_heal_filter(
 
     lines = source.splitlines()
 
-    def _insert_entry(before_marker: str, entries: list[tuple[str, str]]) -> list[str]:
-        """Insert new tuple entries right before the closing bracket."""
+    def _insert_entry(src: list[str], marker: str, entries: list[tuple[str, str]]) -> list[str]:
+        """Insert new tuple entries after the marker line."""
         result = []
         inserted = False
-        for line in reversed(lines):
-            # endswith 비교: 마커 문자열이 코드 내 문자열 리터럴로 나타나는 라인을 제외
-            if not inserted and line.rstrip().endswith(before_marker):
+        for line in reversed(src):
+            if not inserted and line.rstrip().endswith(marker):
                 indent = " " * 4
                 for hanja, hangul in entries:
                     result.append(f"{indent}('{hanja}', '{hangul}'),   # auto-heal")
@@ -962,13 +953,11 @@ def auto_heal_filter(
                 result.append(line)
         return result[::-1]
 
-    # Insert Hanja entries before the closing of HANJA_REPLACEMENTS
     if new_hanja:
-        lines = _insert_entry("# AUTOHEAL:HANJA_END", new_hanja)
+        lines = _insert_entry(lines, "# AUTOHEAL:HANJA_END", new_hanja)
 
-    # Insert Japanese entries before the closing of JAPANESE_REPLACEMENTS
     if new_jp:
-        lines = _insert_entry("# AUTOHEAL:JAPANESE_END", new_jp)
+        lines = _insert_entry(lines, "# AUTOHEAL:JAPANESE_END", new_jp)
 
     with open(module_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
