@@ -77,6 +77,8 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('이现', '이 현'),
     # 2글자 (한자+한자)
     ('全貌', '전모'),        # 全(전) + 貌(모습)
+    ('兴趣', '흥미'),        # Chinese simplified — 어떤 분야에흥미이 있으신가요?
+    ('興趣', '흥미'),        # Chinese traditional
     ('出现', '출현'),
     ('出現', '출현'),
     ('进行', '진행'),
@@ -410,6 +412,9 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('間', '간'),
     ('客', '객'),
     # AUTOHEAL:HANJA_END
+    ('興', '?'),   # auto-heal
+    ('趣', '?'),   # auto-heal
+    ('兴', '?'),   # auto-heal
     ('繁', '?'),   # auto-heal
     ('体', '?'),   # auto-heal
     ('一', '일'),   # auto-heal
