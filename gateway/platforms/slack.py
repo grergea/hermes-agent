@@ -264,34 +264,13 @@ class SlackAdapter(BasePlatformAdapter):
     def _filter_hanja(text: str) -> str:
         '''한자(한문)를 한글 또는 영어로 변환합니다. 코드 블록 내용은 보호됩니다.'''
         from hermes_filters import filter_text, HANJA_PATTERN
-        import re
 
-        # 코드 블록 추출 (보호)
-        placeholders = {}
-        counter = [0]
-
-        def _ph(value: str) -> str:
-            key = f"\x00HANJA_PH{counter[0]}\x00"
-            counter[0] += 1
-            placeholders[key] = value
-            return key
-
-        # 코드 블록 보호
-        text = re.sub(r'(```[\s\S]*?```)', lambda m: _ph(m.group(0)), text)
-        # 인라인 코드 보호
-        text = re.sub(r'(`[^`]+`)', lambda m: _ph(m.group(0)), text)
-
-        # hermes_filters.single_source_of_truth 사용
+        # filter_text()가 코드블록 보호 + 한자 치환 + 복원을 일괄 처리
         text = filter_text(text)
 
-        # 남아있는 한자 감지 (로그만)
         remaining = set(HANJA_PATTERN.findall(text))
         if remaining:
             logger.warning("[Slack] Hanja filter: unconverted characters: %s", remaining)
-
-        # 코드 블록 복원
-        for key, value in placeholders.items():
-            text = text.replace(key, value)
 
         return text
 
