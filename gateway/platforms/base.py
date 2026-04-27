@@ -595,6 +595,13 @@ SUPPORTED_DOCUMENT_TYPES = {
     ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    # SSL Certificate types
+    ".pem": "application/x-x509-ca-cert",
+    ".crt": "application/x-x509-ca-cert",
+    ".key": "application/x-pem-file",
+    ".pfx": "application/x-pkcs12",
+    ".p7b": "application/x-pkcs7-certificates",
+    ".jks": "application/x-java-keystore",
 }
 
 
