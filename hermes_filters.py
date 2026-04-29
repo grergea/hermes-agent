@@ -424,17 +424,24 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('人', '인'),
     ('間', '간'),
     ('客', '객'),
+    # === Taiwan 통신 용어 (2026-04-29) ===
+    ('送信', '전송'),       # URL 적용 후 요청送信
+    # === 자연번역 개선 (2026-04-29) ===
+    ('孤立的', '고립된'),   # 깔끔하게孤立的였습니다 → 깔끔하게 고립된
+    ('先を急いで', '급하게'),   # implementations先，急いで → implementations implementations 급하게 (compound 先>
+    ('没有问题', '문제없다'),   # 스킬 설정没有问题 → 스킬 설정 문제없다
+    ('関連性と', '관련성과'),   # 관련성과 접속 (と→과)
+    ('関連性', '관련성'),   # 관련 + 性 (관련보다 먼저 매칭)
+    ('接客', '접속'),       # 接+客 (U+5BA2) - connection
+    (' Related性と', '관련성과'),   # 관련성과 접속 ( Related성 already replaced → '관련성' + '과')
     # AUTOHEAL:HANJA_END
-    ('不', '다'),   # auto-heal
-    ('到', '았'),   # auto-heal
-    ('找', '찾'),   # auto-heal
-    ('设', ''),   # auto-heal
-    ('桜', ''),   # auto-heal
-    ('选', ''),   # auto-heal
-    ('得', '끼'),   # auto-heal
-    ('候', '시'),   # auto-heal
-    ('获', ''),   # auto-heal
-    ('取', ''),   # auto-heal
+    ('没', ''),   # auto-heal
+    ('问', '할'),   # auto-heal
+    ('有', ''),   # auto-heal
+    ('题', ' '),   # auto-heal
+    ('发', '발'),   # auto-heal
+    ('信', ' '),   # auto-heal
+    ('送', '전'),   # auto-heal
     ('興', '흥'),   # auto-heal → 흥미, 흥분
     ('趣', '취'),   # auto-heal → 취미, 흥취
     ('兴', ''),   # auto-heal (간체자, 한국어 미사용 → 삭제)
@@ -708,6 +715,9 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     # Individual hiragana (for fragment cleanup)
     ('ば', ''),
     ('啊', ''),   # 중국어 감탄사 제거
+    # === 자연번역 개선 (2026-04-29) ===
+    ('自動化', '자동화'),    # automation 완성
+    ('急いで', '급하게'),   # 단독 uses
     # === v:false 단독 가나 삭제 (2026-04-22) ===
     ('ら', ''),
     ('カ', ''),
