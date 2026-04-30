@@ -3773,44 +3773,6 @@ class GatewayRunner:
                     )
                 _update_prompts.pop(_quick_key, None)
 
-        # --- !cc / !cc-reset: Claude Code subprocess 위임 ---
-        _cc_text = (event.text or "").strip()
-
-        if _cc_text == "!cc-reset" or _cc_text.startswith("!cc-reset "):
-            from tools.claude_code_tool import reset_session as _cc_reset_fn
-            _cc_reset_fn(_quick_key)
-            return "✅ Claude Code 세션 초기화 완료."
-
-        if _cc_text.startswith("!cc ") or _cc_text == "!cc":
-            _cc_prompt = _cc_text[4:].strip() if _cc_text.startswith("!cc ") else ""
-            if not _cc_prompt:
-                return "사용법: `!cc <메시지>` — Claude Code에 작업 위임\n세션 초기화: `!cc-reset`"
-
-            # 비동기 전송을 위해 이벤트 루프와 어댑터를 캡처
-            _cc_adapter = self.adapters.get(source.platform)
-            _cc_chat_id = source.chat_id
-            _cc_loop = asyncio.get_running_loop()
-            # 원본 메시지 thread_id 유지 — 일반 Hermes 응답과 동일한 방식
-            _cc_meta = {"thread_id": source.thread_id} if source.thread_id else None
-
-            async def _cc_send(text: str) -> None:
-                if _cc_adapter:
-                    await _cc_adapter.send(_cc_chat_id, text, metadata=_cc_meta)
-
-            _cc_key_snap = _quick_key
-            _cc_prompt_snap = _cc_prompt
-
-            def _cc_bg_worker() -> None:
-                from tools.claude_code_tool import run as _cc_run
-                try:
-                    _cc_resp, _ = _cc_run(_cc_key_snap, _cc_prompt_snap)
-                except Exception as _e:
-                    _cc_resp = f"❌ Claude Code 오류: {_e}"
-                asyncio.run_coroutine_threadsafe(_cc_send(_cc_resp), _cc_loop)
-
-            threading.Thread(target=_cc_bg_worker, daemon=True).start()
-            return "⏳ Claude Code 작업 중... (완료 시 결과 전송)"
-
         # PRIORITY handling when an agent is already running for this session.
         # Default behavior is to interrupt immediately so user text/stop messages
         # are handled with minimal latency.
