@@ -761,8 +761,8 @@ def _log_gateway_response(message_text: str, response: str, duration: float, fai
     goal = (message_text or "").strip()[:200]
     if not goal:
         return
-    # null bytes(FILTER_PH placeholders) 제거 후 500자 절단
-    summary = (response or "").replace("\x00", "").strip()[:500]
+    # null bytes(FILTER_PH placeholders) 제거 후 1500자 절단 (v3.2.0: 500→1500)
+    summary = (response or "").replace("\x00", "").strip()[:1500]
     status = "failed" if failed else "completed"
     try:
         payload = _json.dumps({

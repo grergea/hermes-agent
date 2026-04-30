@@ -322,6 +322,16 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('残余', '잔존'),
     ('同相', '동일'),
     # 실수高频 추가 한자 (single character)
+    # 3글자 신규
+    ('직职能', '직능'),         # 직职能 수행 → 직능 수행 (중복 방지)
+    ('有效性', '유효성'),       # 등록 전에 피드有效性 확인
+    # 2글자 신규
+    ('职能', '직능'),           # 직职能 수행
+    ('主席', '의장'),           # 연준主席 물러나지 않겠다
+    ('框架', '프레임워크'),     # 법적框架 속에서의 전략적 발언
+    ('覆盖', '커버'),           # 필터 사전覆盖率高 → 커버율
+    ('困难', '곤란'),           # 프로그래밍적으로 파싱困难
+    ('率', '율'),               # 覆盖率 → 커버율
     ('等', '등'),
     ('新', '신'),
     # 架/用 관련
@@ -435,6 +445,38 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('接客', '접속'),       # 接+客 (U+5BA2) - connection
     (' Related性と', '관련성과'),   # 관련성과 접속 ( Related성 already replaced → '관련성' + '과')
     # AUTOHEAL:HANJA_END
+    ('参', ''),   # auto-heal
+    ('处', '게'),   # auto-heal
+    ('非', ''),   # auto-heal
+    ('照', ''),   # auto-heal
+    ('预', ''),   # auto-heal
+    ('理', ' '),   # auto-heal
+    ('使', '사'),   # auto-heal
+    ('用', '플'),   # auto-heal
+    ('时', ' '),   # auto-heal
+    ('回', '롤'),   # auto-heal
+    ('的', '된'),   # auto-heal
+    ('次', ''),   # auto-heal
+    ('面', '면'),   # auto-heal
+    ('前', '전'),   # auto-heal
+    ('称', ''),   # auto-heal
+    ('宣', ''),   # auto-heal
+    ('取', '기'),   # auto-heal
+    ('率', ''),   # auto-heal
+    ('盖', ''),   # auto-heal
+    ('覆', ''),   # auto-heal
+    ('困', ''),   # auto-heal
+    ('难', ''),   # auto-heal
+    ('席', '석'),   # auto-heal
+    ('能', '능'),   # auto-heal
+    ('职', '능'),   # auto-heal
+    ('主', '주'),   # auto-heal
+    ('有', '제'),   # auto-heal
+    ('性', '성'),   # auto-heal
+    ('效', '효'),   # auto-heal
+    ('框', '프'),   # auto-heal
+    ('架', '레'),   # auto-heal
+    ('表', '스'),   # auto-heal
     ('没', ''),   # auto-heal
     ('问', '할'),   # auto-heal
     ('有', ''),   # auto-heal
@@ -718,6 +760,13 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     # === 자연번역 개선 (2026-04-29) ===
     ('自動化', '자동화'),    # automation 완성
     ('急いで', '급하게'),   # 단독 uses
+    ('バランス取れています', '균형이 잘 맞습니다'),   # 전체 표현
+    ('バランス取れ', '균형이 잘 맞'),   # 균형이 잘 맞습니다 (중간)
+    ('次回', '다음'),       # 次回 개선 작업 시 → 다음 개선 작업 시
+    ('前面的', '앞의'),     # {goal_text}前面的 → {goal_text}앞의
+    ('宣称', '선언'),       #宣称前: verification → 선언 전: verification
+    ('使用', '사용'),       # 단독使用时만 → 단독 사용시만
+    ('取れ', '유지'),       # 균형取れ → 균형 유지 (fallback)
     # === v:false 단독 가나 삭제 (2026-04-22) ===
     ('ら', ''),
     ('カ', ''),
@@ -725,6 +774,15 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
+    ('れ', '레'),   # auto-heal
+    ('す', '스'),   # auto-heal
+    ('ン', '응'),   # auto-heal
+    ('て', '테'),   # auto-heal
+    ('い', '이'),   # auto-heal
+    ('ま', '마'),   # auto-heal
+    ('ス', '스'),   # auto-heal
+    ('バ', '바'),   # auto-heal
+    ('ラ', '라'),   # auto-heal
     ('コ', '코'),   # auto-heal
     ('ー', ''),     # auto-heal (장음부호, 단독 → 삭제)
     ('ュ', '유'),   # auto-heal (소문자 ュ 근사값)

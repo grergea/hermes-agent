@@ -510,11 +510,24 @@ def _call_hermes_task_log(
     status: str,
     duration: float,
     summary: Optional[str],
+    result: Optional[dict] = None,
 ) -> None:
     """Fire-and-forget call to hermes-task-log.py.
 
-    Logs a subagent result to hermes-agent-log/YYYY-MM-DD.md.
+    Logs a subagent result to hermes-agent-log/YYYY-MM-DD.json (Source of Truth).
     Failures are silently swallowed -- logging must never break delegation.
+
+    Args:
+        goal: 작업 목표 (200자 절단)
+        status: 작업 상태 (completed, error, etc.)
+        duration: 소요 시간 (초)
+        summary: 결과 요약 (1500자 절단, v3.2.0: 500→1500)
+        result: 메타데이터 dict (future extension)
+            - tools: dict {search, browser, file_edit, total}
+            - skills: list [skill_name, ...]
+            - files: dict {modified, created}
+            - delegates: int (하위 작업 수)
+            - error: str or None
     """
     script = _get_hermes_task_log_script()
     if script is None:
@@ -523,7 +536,7 @@ def _call_hermes_task_log(
 
     # null bytes(FILTER_PH placeholders) 제거 후 절단
     goal_trunc = (goal or "unknown")[:200]
-    summary_trunc = (summary or "no summary").replace("\x00", "").strip()[:500]
+    summary_trunc = (summary or "no summary").replace("\x00", "").strip()[:1500]
 
     try:
         payload = json.dumps({
@@ -531,6 +544,8 @@ def _call_hermes_task_log(
             "status": status,
             "duration": int(duration),
             "summary": summary_trunc,
+            "mode": "MANUAL",
+            "result": result or {"status": status, "tools": None, "skills": None, "files": None, "delegates": 0, "error": None},
         }, ensure_ascii=False)
         subprocess.run(
             [sys.executable or "python3", str(script), "--json", payload],
