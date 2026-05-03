@@ -5705,7 +5705,7 @@ class GatewayRunner:
         # Build the context prompt to inject
         context_prompt = build_session_context_prompt(context, redact_pii=_redact_pii)
 
-        # B/C방식: 이전 응답에서 비한글 문자가 감지된 경우, 교정 요청 주입
+        # 비한글 교정 플래그: 이전 응답에서 비한글 문자가 감지된 경우 교정 프롬프트 주입
         _script_correction = getattr(session_entry, 'needs_script_correction', None)
         if _script_correction:
             session_entry.needs_script_correction = None  # 플래그 리셋
@@ -6568,7 +6568,7 @@ class GatewayRunner:
             # Also runs for streaming case (already_sent path below).
             response = _filter_hanja_global(response)
 
-            # B방식 — 필터 후 잔여 한자/일본어 자동 방어
+            # CJK 교정 루프 — 필터 후 잔여 한자/일본어 자동 치유 및 재생성
             remaining_hanja = HANJA_PATTERN.findall(response)
             remaining_jp = HIRAGANA_PATTERN.findall(response)
             if remaining_hanja or remaining_jp:
@@ -6645,7 +6645,7 @@ class GatewayRunner:
                 # No remaining Hanja/Japanese — all clean
                 pass
 
-            # C방식 — 키릴문자 감지 및 제거
+            # Cyrillic 즉시 제거 — 감지 시 로그 후 즉시 삭제
             remaining_cyrillic = CYRILLIC_PATTERN.findall(response)
             if remaining_cyrillic:
                 logger.warning(
