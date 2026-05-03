@@ -835,14 +835,18 @@ HANJA_PATTERN = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
 HIRAGANA_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
 CYRILLIC_PATTERN = re.compile(r'[\u0400-\u04ff\u0500-\u052f]')
 
-# Fallback: remove ANY remaining CJK/Kana characters not caught by dictionary.
-# This ensures 100% cleanup even for characters missing from HANJA_REPLACEMENTS.
+# Fallback: translate or remove any remaining CJK/Kana characters not caught by dictionary.
+# _cjk_to_hangul_fallback (defined below) is used as the sub callback \u2014 it tries the
+# single-char reverse index first and only deletes truly unmapped characters.
 _REMOVE_REMAINING_CJK = re.compile(
-    r'[\u4e00-\u9fff'   # CJK Unified Ideographs
-    r'\u3400-\u4dbf'    # CJK Extension A
-    r'\uf900-\ufaff'    # CJK Compatibility
-    r'\u3040-\u309f'    # Hiragana
-    r'\u30a0-\u30ff]'   # Katakana
+    r'[\u4e00-\u9fff'       # CJK Unified Ideographs
+    r'\u3400-\u4dbf'        # CJK Extension A
+    r'\uf900-\ufaff'        # CJK Compatibility
+    r'\u3040-\u309f'        # Hiragana
+    r'\u30a0-\u30ff'        # Katakana
+    r'\U00020000-\U0002A6DF' # CJK Extension B (supplementary plane)
+    r'\u2f00-\u2fdf'        # Kangxi Radicals
+    r'\uff01-\uffef]'        # Fullwidth / Halfwidth forms
 )
 
 # Fallback: remove Cyrillic characters (no dictionary mapping — always delete).
@@ -850,6 +854,48 @@ _REMOVE_CYRILLIC = re.compile(
     r'[\u0400-\u04ff'   # Cyrillic
     r'\u0500-\u052f]'   # Cyrillic Supplement
 )
+
+
+# Single-char reverse index: built from HANJA/JAPANESE_REPLACEMENTS at module load time.
+# Maps single-char CJK/Kana source → Korean target for _cjk_to_hangul_fallback callback.
+# Empty-string targets (deletion entries) are excluded so the fallback never silently deletes.
+_SINGLE_CHAR_FALLBACK: dict[str, str] = {}
+
+
+def _rebuild_single_char_fallback() -> None:
+    """Rebuild _SINGLE_CHAR_FALLBACK from current HANJA/JAPANESE_REPLACEMENTS.
+
+    Called once at module load and again after auto_heal_filter reloads the module,
+    so newly healed single-char entries are immediately usable by the sub callback.
+    """
+    global _SINGLE_CHAR_FALLBACK
+    table: dict[str, str] = {}
+    for src, dst in HANJA_REPLACEMENTS:
+        if len(src) == 1 and dst:
+            table[src] = dst
+    for src, dst in JAPANESE_REPLACEMENTS:
+        if len(src) == 1 and dst:
+            table[src] = dst
+    _SINGLE_CHAR_FALLBACK = table
+    logger.debug("[CJK-fallback] single-char table rebuilt: %d entries", len(table))
+
+
+_rebuild_single_char_fallback()
+
+
+def _cjk_to_hangul_fallback(match: re.Match) -> str:
+    """Callback for _REMOVE_REMAINING_CJK.sub() — translates before deleting.
+
+    Priority:
+    1. _SINGLE_CHAR_FALLBACK hit → return Korean translation (natural output)
+    2. No hit → return '' (deleted) and log for future auto-heal
+    """
+    ch = match.group(0)
+    result = _SINGLE_CHAR_FALLBACK.get(ch)
+    if result is not None:
+        return result
+    logger.debug("[CJK-fallback] unmapped char deleted: U+%04X %r", ord(ch), ch)
+    return ''
 
 
 # =============================================================================
@@ -893,8 +939,8 @@ def filter_text(text: str) -> str:
     for jp, kr in JAPANESE_REPLACEMENTS:
         text = text.replace(jp, kr)
 
-    # ---- fallback: delete any remaining CJK/Kana not covered by dictionaries ----
-    text = _REMOVE_REMAINING_CJK.sub('', text)
+    # ---- fallback: translate (or delete) any remaining CJK/Kana not in dictionaries ----
+    text = _REMOVE_REMAINING_CJK.sub(_cjk_to_hangul_fallback, text)
 
     # ---- remove Cyrillic characters ----
     text = _REMOVE_CYRILLIC.sub('', text)
@@ -1081,12 +1127,14 @@ def auto_heal_filter(
             continue
         _AUTO_HEAL_KNOWN.add(key)
         reading = _extract_reading_from_dict(ch)
-        fallback = reading if reading else ""
-        new_hanja.append((ch, fallback))
+        # Only add to dictionary if a reading was found — empty-string entries
+        # permanently lock the char as "delete", defeating the fallback callback.
+        if reading:
+            new_hanja.append((ch, reading))
 
-        # Persist to log
+        # Persist to log (regardless of whether a reading was found)
         entry: dict = {
-            "r": fallback,
+            "r": reading or "",
             "ts": timestamp,
             "v": reading is not None,   # auto-verified if reading was found
         }
@@ -1095,8 +1143,8 @@ def auto_heal_filter(
             if snippets:
                 entry["ctx"] = snippets
         _auto_heal_log.setdefault("hanja", {})[ch] = entry
-        logger.info(f"[Auto-heal] Hanja '{ch}' → '{fallback}' "
-                    f"({'auto' if reading else '?, please verify'})")
+        logger.info(f"[Auto-heal] Hanja '{ch}' → '{reading!r}' "
+                    f"({'added to dict' if reading else 'no reading — skipped, fallback handles'})")
 
     # --- Japanese: try to find reading, else '?' (same as Hanja now) ---
     for ch in remaining_jp_chars:
@@ -1105,12 +1153,11 @@ def auto_heal_filter(
             continue
         _AUTO_HEAL_KNOWN.add(key)
         reading = _extract_jp_reading_from_dict(ch)
-        fallback = reading if reading else ""
-        new_jp.append((ch, fallback))
+        if reading:
+            new_jp.append((ch, reading))
 
-        # Persist to log
         entry: dict = {
-            "r": fallback,
+            "r": reading or "",
             "ts": timestamp,
             "v": reading is not None,
         }
@@ -1119,8 +1166,8 @@ def auto_heal_filter(
             if snippets:
                 entry["ctx"] = snippets
         _auto_heal_log.setdefault("japanese", {})[ch] = entry
-        logger.info(f"[Auto-heal] Japanese '{ch}' → '{fallback}' "
-                    f"({'auto' if reading else '?, please verify'})")
+        logger.info(f"[Auto-heal] Japanese '{ch}' → '{reading!r}' "
+                    f"({'added to dict' if reading else 'no reading — skipped, fallback handles'})")
 
     if not new_hanja and not new_jp:
         return
@@ -1163,6 +1210,8 @@ def auto_heal_filter(
     importlib.reload(_hm)
     HANJA_REPLACEMENTS = _hm.HANJA_REPLACEMENTS
     JAPANESE_REPLACEMENTS = _hm.JAPANESE_REPLACEMENTS
+    # Sync the single-char reverse index so _cjk_to_hangul_fallback sees new entries.
+    _rebuild_single_char_fallback()
     logger.info("[Auto-heal] hermes_filters reloaded — new entries live")
 
 def log_cyrillic_chars(chars: set[str], context_text: str = "") -> None:
