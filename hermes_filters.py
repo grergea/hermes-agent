@@ -328,6 +328,9 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     # 2글자 신규
     ('职能', '직능'),           # 직职能 수행
     ('主席', '의장'),           # 연준主席 물러나지 않겠다
+    ('共和党', '공화당'),       # 공화당议员 ETF
+    ('民主党', '여론당'),       # 民主党ETF (미국 민주주의당)
+    ('议员', '위원'),           # 미국议员 ETF — 하원/상원 의원
     ('框架', '프레임워크'),     # 법적框架 속에서의 전략적 발언
     ('覆盖', '커버'),           # 필터 사전覆盖率高 → 커버율
     ('困难', '곤란'),           # 프로그래밍적으로 파싱困难
@@ -444,7 +447,29 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('関連性', '관련성'),   # 관련 + 性 (관련보다 먼저 매칭)
     ('接客', '접속'),       # 接+客 (U+5BA2) - connection
     (' Related性と', '관련성과'),   # 관련성과 접속 ( Related성 already replaced → '관련성' + '과')
+    ('中心', '센터'),
+    ('其余', '기타'),
     # AUTOHEAL:HANJA_END
+    ('区', ''),   # auto-heal
+    ('地', ''),   # auto-heal
+    ('和', '화'),   # auto-heal
+    ('共', '공'),   # auto-heal
+    ('员', '원'),   # auto-heal
+    ('据', '데'),   # auto-heal
+    ('中', ' '),   # auto-heal
+    ('其', ''),   # auto-heal
+    ('党', '당'),   # auto-heal
+    ('主', '론'),   # auto-heal
+    ('议', '로'),   # auto-heal
+    ('余', '존'),   # auto-heal
+    ('心', ''),   # auto-heal
+    ('民', '여'),   # auto-heal
+    ('数', ' '),   # auto-heal
+    ('模', '모'),   # auto-heal
+    ('模', '모'),   # auto-heal
+    ('下', '음'),   # auto-heal
+    ('接', '인'),   # auto-heal
+    ('直', '직'),   # auto-heal
     ('参', ''),   # auto-heal
     ('处', '게'),   # auto-heal
     ('非', ''),   # auto-heal
@@ -766,6 +791,11 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('前面的', '앞의'),     # {goal_text}前面的 → {goal_text}앞의
     ('宣称', '선언'),       #宣称前: verification → 선언 전: verification
     ('使用', '사용'),       # 단독使用时만 → 단독 사용시만
+    ('模式下', '모드에서'),  # 줄 번호 보기模式下 → 줄 번호 보기 모드에서
+    ('预处理', '사전에 처리'), # gateway预处理 → gateway 사전에 처리
+    ('非비전', '비전이 아닌'), # 非비전 모델 → 비전이 아닌 모델
+    ('参照', '참조'),       # config.yaml参照 → config.yaml 참조
+    # ('非', '비'),           # 비 prefix (复合어 처리)
     ('取れ', '유지'),       # 균형取れ → 균형 유지 (fallback)
     # === v:false 단독 가나 삭제 (2026-04-22) ===
     ('ら', ''),
@@ -774,6 +804,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
+    ('を', '오'),   # auto-heal
     ('れ', '레'),   # auto-heal
     ('す', '스'),   # auto-heal
     ('ン', '응'),   # auto-heal
