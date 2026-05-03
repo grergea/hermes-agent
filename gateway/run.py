@@ -6587,13 +6587,58 @@ class GatewayRunner:
                 remaining_jp_after = HIRAGANA_PATTERN.findall(response)
                 if remaining_after or remaining_jp_after:
                     logger.warning(
-                        "[Retry] still leaking after auto-heal: %s %s. "
-                        "Applying Unicode fallback deletion before delivery.",
+                        "[Retry] still leaking after auto-heal: %s %s.",
                         remaining_after[:5], remaining_jp_after[:5],
                     )
-                    # Unicode fallback: delete any remaining CJK/Kana unconditionally
-                    response = _REMOVE_REMAINING_CJK.sub('', response)
-                    session_entry.needs_script_correction = "hanja"
+                    # Non-streaming: attempt synchronous re-generation before delivering.
+                    # The response has not been sent yet, so we can discard it and
+                    # re-call the LLM with a correction note prepended to context_prompt.
+                    # Max 1 attempt (guarded by _hanja_regen_attempted) to avoid loops.
+                    _hanja_regen_attempted = getattr(session_entry, '_hanja_regen_attempted', False)
+                    if not _already_sent and not _hanja_regen_attempted:
+                        session_entry._hanja_regen_attempted = True
+                        logger.warning("[Regen] Non-streaming: attempting synchronous re-generation...")
+                        _correction_prefix = (
+                            "[System: Your previous response contained Chinese/Japanese characters "
+                            "that Korean users cannot read. Regenerate your response using ONLY "
+                            "Korean Hangul. Do not mention this note.]\n\n"
+                        )
+                        try:
+                            _regen_result = await self._run_agent(
+                                message=message_text,
+                                context_prompt=_correction_prefix + context_prompt,
+                                history=history,
+                                source=source,
+                                session_id=session_entry.session_id,
+                                session_key=session_key,
+                                run_generation=run_generation,
+                                event_message_id=event.message_id,
+                                channel_prompt=event.channel_prompt,
+                            )
+                            _regen_response = _filter_hanja_global(
+                                _regen_result.get("final_response") or ""
+                            )
+                            _regen_dirty = (
+                                HANJA_PATTERN.findall(_regen_response)
+                                or HIRAGANA_PATTERN.findall(_regen_response)
+                            )
+                            if _regen_response and not _regen_dirty:
+                                response = _regen_response
+                                logger.info("[Regen] Re-generation succeeded — delivering clean response")
+                            else:
+                                # Re-gen also dirty: translate/delete and flag next turn
+                                logger.warning("[Regen] Re-generation still dirty — applying fallback")
+                                response = _REMOVE_REMAINING_CJK.sub(_cjk_to_hangul_fallback, response)
+                                session_entry.needs_script_correction = "hanja"
+                        except Exception as _regen_err:
+                            logger.warning("[Regen] Re-generation failed: %s — applying fallback", _regen_err)
+                            response = _REMOVE_REMAINING_CJK.sub(_cjk_to_hangul_fallback, response)
+                            session_entry.needs_script_correction = "hanja"
+                    else:
+                        # Streaming path or second attempt: translate/delete + flag next turn
+                        response = _REMOVE_REMAINING_CJK.sub(_cjk_to_hangul_fallback, response)
+                        if not _already_sent:
+                            session_entry.needs_script_correction = "hanja"
                 else:
                     logger.info("[Retry] auto-heal succeeded — no more leakage")
             else:
