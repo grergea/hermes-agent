@@ -685,16 +685,22 @@ class SlackAdapter(BasePlatformAdapter):
         return self._app.client  # fallback to primary
 
     @staticmethod
-    def _filter_hanja(text: str) -> str:
-        '''한자(한문)를 한글 또는 영어로 변환합니다. 코드 블록 내용은 보호됩니다.'''
-        from hermes_filters import filter_text, HANJA_PATTERN
+    def _filter_scripts(text: str) -> str:
+        '''한자·가나·키릴 문자를 한글로 변환합니다. 코드 블록 내용은 보호됩니다.'''
+        from hermes_filters import filter_text, HANJA_PATTERN, KANA_PATTERN, CYRILLIC_PATTERN
 
-        # filter_text()가 코드블록 보호 + 한자 치환 + 복원을 일괄 처리
+        # filter_text()가 코드블록 보호 + 한자/가나/키릴 치환 + 복원을 일괄 처리
         text = filter_text(text)
 
-        remaining = set(HANJA_PATTERN.findall(text))
-        if remaining:
-            logger.warning("[Slack] Hanja filter: unconverted characters: %s", remaining)
+        remaining_hanja = set(HANJA_PATTERN.findall(text))
+        if remaining_hanja:
+            logger.warning("[Slack] unconverted Hanja: %s", remaining_hanja)
+        remaining_kana = set(KANA_PATTERN.findall(text))
+        if remaining_kana:
+            logger.warning("[Slack] unconverted Kana: %s", remaining_kana)
+        remaining_cyrillic = set(CYRILLIC_PATTERN.findall(text))
+        if remaining_cyrillic:
+            logger.warning("[Slack] unconverted Cyrillic: %s", remaining_cyrillic)
 
         return text
 
@@ -710,8 +716,8 @@ class SlackAdapter(BasePlatformAdapter):
             return SendResult(success=False, error="Not connected")
 
         try:
-            # 1. 한자 필터 적용 (코드 블록 보호 후)
-            content = self._filter_hanja(content)
+            # 1. 스크립트 필터 적용 (코드 블록 보호 후 — 한자/가나/키릴)
+            content = self._filter_scripts(content)
 
             # Check for a pending slash-command context.  When the user ran a
             # native slash command (e.g. /q, /stop, /model), the initial ack

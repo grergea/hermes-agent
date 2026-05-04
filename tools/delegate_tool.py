@@ -34,6 +34,7 @@ from toolsets import TOOLSETS
 from tools import file_state
 from tools.terminal_tool import set_approval_callback as _set_subagent_approval_cb
 from utils import base_url_hostname, is_truthy_value
+from agent.prompt_builder import KOREAN_LANGUAGE_RULE as _KOREAN_LANGUAGE_RULE
 
 
 # Tools that children must never have access to
@@ -673,6 +674,7 @@ def _build_child_system_prompt(
             f"NOTE: You are at depth {child_depth}. The delegation tree "
             f"is capped at max_spawn_depth={max_spawn_depth}. {child_note}"
         )
+    parts.append(_KOREAN_LANGUAGE_RULE.strip())
     return "\n".join(parts)
 
 

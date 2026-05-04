@@ -40,7 +40,7 @@ from hermes_filters import (
     HANJA_REPLACEMENTS,
     JAPANESE_REPLACEMENTS,
     HANJA_PATTERN,
-    HIRAGANA_PATTERN,
+    KANA_PATTERN,
     CYRILLIC_PATTERN,
     _REMOVE_REMAINING_CJK,
     _REMOVE_CYRILLIC,
@@ -6570,7 +6570,7 @@ class GatewayRunner:
 
             # CJK 교정 루프 — 필터 후 잔여 한자/일본어 자동 치유 및 재생성
             remaining_hanja = HANJA_PATTERN.findall(response)
-            remaining_jp = HIRAGANA_PATTERN.findall(response)
+            remaining_jp = KANA_PATTERN.findall(response)
             if remaining_hanja or remaining_jp:
                 what = "Hanja" if remaining_hanja else "Japanese"
                 chars = remaining_hanja or remaining_jp
@@ -6584,7 +6584,7 @@ class GatewayRunner:
                 response = _filter_hanja_global(response)
                 # Check again after auto-heal
                 remaining_after = HANJA_PATTERN.findall(response)
-                remaining_jp_after = HIRAGANA_PATTERN.findall(response)
+                remaining_jp_after = KANA_PATTERN.findall(response)
                 if remaining_after or remaining_jp_after:
                     logger.warning(
                         "[Retry] still leaking after auto-heal: %s %s.",
@@ -6620,7 +6620,7 @@ class GatewayRunner:
                             )
                             _regen_dirty = (
                                 HANJA_PATTERN.findall(_regen_response)
-                                or HIRAGANA_PATTERN.findall(_regen_response)
+                                or KANA_PATTERN.findall(_regen_response)
                             )
                             if _regen_response and not _regen_dirty:
                                 response = _regen_response

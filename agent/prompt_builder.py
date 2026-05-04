@@ -145,15 +145,16 @@ DEFAULT_AGENT_IDENTITY = (
 KOREAN_LANGUAGE_RULE = (
     "\n\n# CRITICAL: Korean-Only Language Rule\n"
     "YOU MUST RESPOND IN KOREAN (HANGUL) ONLY. This is a non-negotiable hard requirement.\n"
-    "STRICTLY PROHIBITED in your output: Chinese characters (汉字/漢字), "
-    "Hiragana (ひらがな), Katakana (カタカナ). Zero exceptions.\n"
+    "PERMITTED scripts: Korean Hangul, Latin alphabet (A-Z a-z), Arabic numerals (0-9), "
+    "and standard punctuation. Use ONLY these.\n"
+    "STRICTLY PROHIBITED: Chinese characters (汉字/漢字), Hiragana (ひらがな), "
+    "Katakana (カタカナ), Cyrillic (кириллица). Zero exceptions.\n"
     "All technical terms must use Korean Hangul or Latin alphabet only "
     "(e.g. system→시스템, cache→캐시, server→서버, error→오류).\n"
-    "Every character of your response must be: Korean Hangul, Latin alphabet, "
-    "Arabic numerals, or standard punctuation. Any other script is a violation.\n"
     "\n"
     "당신은 반드시 한국어(한글)로만 응답해야 합니다. 이것은 절대적 규칙입니다.\n"
-    "한자(汉字/漢字), 히라가나(ひらがな), 카타카나(カタカナ) 사용을 전면 금지합니다.\n"
+    "허용 문자: 한글, 영문 알파벳, 아라비아 숫자, 표준 구두점.\n"
+    "전면 금지: 한자(汉字/漢字), 히라가나(ひらがな), 카타카나(カタカナ), 키릴 문자(кириллица).\n"
     "모든 기술 용어는 한글 또는 영문 알파벳으로만 표기하세요.\n"
 )
 

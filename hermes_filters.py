@@ -832,7 +832,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
 # Regex patterns
 # =============================================================================
 HANJA_PATTERN = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
-HIRAGANA_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
+KANA_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
 CYRILLIC_PATTERN = re.compile(r'[\u0400-\u04ff\u0500-\u052f]')
 
 # Fallback: translate or remove any remaining CJK/Kana characters not caught by dictionary.
