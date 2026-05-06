@@ -44,6 +44,7 @@ from hermes_filters import (
     CYRILLIC_PATTERN,
     _REMOVE_REMAINING_CJK,
     _REMOVE_CYRILLIC,
+    _cjk_to_hangul_fallback,
     log_cyrillic_chars,
     filter_text,
     auto_heal_filter,
