@@ -5706,6 +5706,9 @@ class GatewayRunner:
         # Build the context prompt to inject
         context_prompt = build_session_context_prompt(context, redact_pii=_redact_pii)
 
+        # 매 턴 시작 시 재생성 시도 플래그 리셋 — 이전 턴의 오염이 이번 턴 재생성을 막지 않도록
+        session_entry._hanja_regen_attempted = False
+
         # 비한글 교정 플래그: 이전 응답에서 비한글 문자가 감지된 경우 교정 프롬프트 주입
         _script_correction = getattr(session_entry, 'needs_script_correction', None)
         if _script_correction:
@@ -6600,9 +6603,12 @@ class GatewayRunner:
                         session_entry._hanja_regen_attempted = True
                         logger.warning("[Regen] Non-streaming: attempting synchronous re-generation...")
                         _correction_prefix = (
-                            "[System: Your previous response contained Chinese/Japanese characters "
-                            "that Korean users cannot read. Regenerate your response using ONLY "
-                            "Korean Hangul. Do not mention this note.]\n\n"
+                            "[System: CRITICAL ERROR — Your previous response contained "
+                            "Chinese characters (汉字/漢字) or Japanese Kana (かな/カナ) "
+                            "that Korean users cannot read. "
+                            "You MUST regenerate your ENTIRE response using ONLY Korean Hangul. "
+                            "Do NOT use any CJK characters (U+4E00–U+9FFF) or Kana (U+3040–U+30FF). "
+                            "Do not mention this note.]\n\n"
                         )
                         try:
                             _regen_result = await self._run_agent(
@@ -6619,6 +6625,16 @@ class GatewayRunner:
                             _regen_response = _filter_hanja_global(
                                 _regen_result.get("final_response") or ""
                             )
+                            # 재생성 응답에도 auto_heal + 2차 필터 완전 적용
+                            _regen_h = HANJA_PATTERN.findall(_regen_response)
+                            _regen_j = KANA_PATTERN.findall(_regen_response)
+                            if _regen_h or _regen_j:
+                                logger.info(
+                                    "[Regen] Regen response has residual CJK — applying auto_heal+filter: %s",
+                                    (_regen_h or _regen_j)[:5],
+                                )
+                                auto_heal_filter(set(_regen_h), set(_regen_j), context_text=_regen_response)
+                                _regen_response = _filter_hanja_global(_regen_response)
                             _regen_dirty = (
                                 HANJA_PATTERN.findall(_regen_response)
                                 or KANA_PATTERN.findall(_regen_response)

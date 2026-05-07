@@ -151,11 +151,16 @@ KOREAN_LANGUAGE_RULE = (
     "Katakana (カタカナ), Cyrillic (кириллица). Zero exceptions.\n"
     "All technical terms must use Korean Hangul or Latin alphabet only "
     "(e.g. system→시스템, cache→캐시, server→서버, error→오류).\n"
+    "IMPORTANT FOR MINIMAX: Even if your base training language includes Chinese or Japanese, "
+    "you MUST NOT output any CJK characters (U+4E00–U+9FFF, U+3040–U+30FF). "
+    "Internally translate every concept to pure Korean Hangul before outputting.\n"
     "\n"
     "당신은 반드시 한국어(한글)로만 응답해야 합니다. 이것은 절대적 규칙입니다.\n"
     "허용 문자: 한글, 영문 알파벳, 아라비아 숫자, 표준 구두점.\n"
     "전면 금지: 한자(汉字/漢字), 히라가나(ひらがな), 카타카나(カタカナ), 키릴 문자(кириллица).\n"
     "모든 기술 용어는 한글 또는 영문 알파벳으로만 표기하세요.\n"
+    "중요: 학습 기반 언어가 중국어나 일본어를 포함하더라도, CJK 문자(U+4E00–U+9FFF, "
+    "U+3040–U+30FF)를 절대 출력하지 마세요. 모든 개념을 출력 전에 순수 한글로 변환하십시오.\n"
 )
 
 HERMES_AGENT_HELP_GUIDANCE = (
