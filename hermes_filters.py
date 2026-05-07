@@ -467,145 +467,44 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('不符合', '일치하지 않는'), # Facts不符合 — 정치적 발언 가능성 높다
     ('水准', '수준'),           # 오자 수정: 水槽 → 수준 (Chinese: standard/level)
     # AUTOHEAL:HANJA_END
-    ('用', '플'),   # auto-heal
-    ('调', '디'),   # auto-heal
-    ('度', '도'),   # auto-heal
-    ('输', '송'),   # auto-heal
-    ('下', '음'),   # auto-heal
-    ('是', '것'),   # auto-heal
-    ('一', '일'),   # auto-heal
-    ('时', ' '),   # auto-heal
-    ('请', '요'),   # auto-heal
-    ('合', '합'),   # auto-heal
-    ('载', '하'),   # auto-heal
-    ('確', '확'),   # auto-heal
-    ('成', '료'),   # auto-heal
-    ('功', '기'),   # auto-heal
-    ('認', '인'),   # auto-heal
-    ('略', '략'),   # auto-heal
-    ('困', '곤'),   # auto-heal
-    ('中', ' '),   # auto-heal
-    ('到', '았'),   # auto-heal
-    ('不', '다'),   # auto-heal
-    ('容', '내'),   # auto-heal
-    ('的', '된'),   # auto-heal
-    ('出', '출'),   # auto-heal
-    ('境', '경'),   # auto-heal
-    ('譯', '역'),   # auto-heal
-    ('意', '의'),   # auto-heal
-    ('内', ' '),   # auto-heal
-    ('空', '공'),   # auto-heal
-    ('件', '포'),   # auto-heal
-    ('的', '된'),   # auto-heal
-    ('数', ' '),   # auto-heal
-    ('大', '온'),   # auto-heal
-    ('空', '공'),   # auto-heal
-    ('区', ''),   # auto-heal
-    ('地', ''),   # auto-heal
-    ('和', '화'),   # auto-heal
-    ('共', '공'),   # auto-heal
-    ('员', '원'),   # auto-heal
-    ('据', '데'),   # auto-heal
-    ('中', ' '),   # auto-heal
-    ('其', ''),   # auto-heal
-    ('党', '당'),   # auto-heal
-    ('主', '론'),   # auto-heal
-    ('议', '로'),   # auto-heal
-    ('余', '존'),   # auto-heal
-    ('心', ''),   # auto-heal
-    ('民', '여'),   # auto-heal
-    ('数', ' '),   # auto-heal
-    ('模', '모'),   # auto-heal
-    ('模', '모'),   # auto-heal
-    ('下', '음'),   # auto-heal
-    ('接', '인'),   # auto-heal
-    ('直', '직'),   # auto-heal
-    ('参', ''),   # auto-heal
-    ('处', '게'),   # auto-heal
-    ('非', ''),   # auto-heal
-    ('照', ''),   # auto-heal
-    ('预', ''),   # auto-heal
-    ('理', ' '),   # auto-heal
-    ('使', '사'),   # auto-heal
-    ('用', '플'),   # auto-heal
-    ('时', ' '),   # auto-heal
-    ('回', '롤'),   # auto-heal
-    ('的', '된'),   # auto-heal
-    ('次', ''),   # auto-heal
-    ('面', '면'),   # auto-heal
-    ('前', '전'),   # auto-heal
-    ('称', ''),   # auto-heal
-    ('宣', ''),   # auto-heal
-    ('取', '기'),   # auto-heal
-    ('率', ''),   # auto-heal
-    ('盖', ''),   # auto-heal
-    ('覆', ''),   # auto-heal
-    ('困', ''),   # auto-heal
-    ('难', ''),   # auto-heal
-    ('席', '석'),   # auto-heal
-    ('能', '능'),   # auto-heal
-    ('职', '능'),   # auto-heal
-    ('主', '주'),   # auto-heal
-    ('有', '제'),   # auto-heal
-    ('性', '성'),   # auto-heal
-    ('效', '효'),   # auto-heal
-    ('框', '프'),   # auto-heal
-    ('架', '레'),   # auto-heal
-    ('表', '스'),   # auto-heal
-    ('没', ''),   # auto-heal
-    ('问', '할'),   # auto-heal
-    ('有', ''),   # auto-heal
-    ('题', ' '),   # auto-heal
-    ('发', '발'),   # auto-heal
-    ('信', ' '),   # auto-heal
-    ('送', '전'),   # auto-heal
-    ('興', '흥'),   # auto-heal → 흥미, 흥분
-    ('趣', '취'),   # auto-heal → 취미, 흥취
-    ('兴', ''),   # auto-heal (간체자, 한국어 미사용 → 삭제)
-    ('繁', '번'),   # auto-heal → 번성, 번영
-    ('体', '체'),   # auto-heal → 체력, 단체
-    ('一', '일'),   # auto-heal
-    ('条', '조'),   # auto-heal → 조건, 조항
-    ('本', ''),   # auto-heal (메인 섹션 '본' 우선 — dead code)
-    ('日', '로'),   # auto-heal
-    ('同', '동'),   # auto-heal
-    ('个', '리'),   # auto-heal
-    ('是', '것'),   # auto-heal
-    ('保', '보'),   # auto-heal
-    ('内', ' '),   # auto-heal
-    ('包', '포'),   # auto-heal
-    ('含', '함'),   # auto-heal → 함유, 포함
-    ('護', '호'),   # auto-heal → 보호, 호위
-    ('意', '의'),   # 意思(의미), 意図(의도) — 2026-04-22
-    ('條', '조'),   # auto-heal → 조건, 조항
-    ('成', '료'),   # auto-heal
-    ('思', '사'),   # 意思(의사), 思念(사념) — 2026-04-22
-    ('了', '다'),   # auto-heal
-    ('完', '완'),   # auto-heal
-    ('作', '작'),   # auto-heal
-    ('容', '내'),   # auto-heal
-    ('效', '효'),   # auto-heal → 효과, 효율
-    ('示', '시'),   # auto-heal → 시범, 지시
-    ('関', '관'),   # auto-heal → 관계, 관련
-    ('題', '제'),   # auto-heal → 문제, 제목
-    ('文', ''),   # auto-heal (메인 섹션 '문' 우선 — dead code)
-    ('識', '식'),   # auto-heal → 인식, 지식
-    ('問', '문'),   # auto-heal → 문제, 질문
-    ('装', '현'),   # auto-heal
-    ('夹', ''),   # auto-heal (한국어 미사용 한자 → 삭제)
-    ('実', '구'),   # auto-heal
-    ('件', '포'),   # auto-heal
-    ('浮', '부'),   # auto-heal → 부동, 부력
-    ('認', '인'),   # auto-heal
-    ('明', '설'),   # auto-heal
-    ('宙', '주'),   # auto-heal → 우주
-    ('連', '연'),   # auto-heal → 연결, 연속
-    ('測', '측'),   # auto-heal → 측정, 추측
-    ('技', '기'),   # auto-heal → 기술, 기능
-    ('術', '술'),   # auto-heal → 기술, 술법
-    ('進', '진'),   # auto-heal → 진행, 진출
-    ('牙', '아'),   # auto-heal → 아치, 상아
-    ('蓝', ''),     # auto-heal (간체자 藍, 한국어 미사용 → 삭제)
+    # --- 올바른 단일 문자 매핑 (정리 후 유지) ---
+    ('合', '합'),   # 합계, 결합
+    ('確', '확'),   # 확인
+    ('認', '인'),   # 인식
+    ('困', '곤'),   # 곤경
+    ('出', '출'),   # 출력
+    ('譯', '역'),   # 번역
+    ('共', '공'),   # 공통
+    ('员', '원'),   # 구성원 (간체자 員)
+    ('党', '당'),   # 정당 (간체자 黨)
+    ('席', '석'),   # 의석
+    ('性', '성'),   # 성질
+    ('使', '사'),   # 사용
+    ('興', '흥'),   # 흥미, 흥분
+    ('趣', '취'),   # 취미, 흥취
+    ('繁', '번'),   # 번성, 번영
+    ('体', '체'),   # 체력, 단체 (간체자 體)
+    ('条', '조'),   # 조건, 조항 (간체자 條)
+    ('同', '동'),   # 동일
+    ('含', '함'),   # 포함
+    ('護', '호'),   # 보호, 호위
+    ('條', '조'),   # 조건, 조항 (전통 한자)
+    ('思', '사'),   # 의사, 사념
+    ('完', '완'),   # 완료
+    ('作', '작'),   # 작업
+    ('示', '시'),   # 시범, 지시
+    ('関', '관'),   # 관계, 관련
+    ('題', '제'),   # 문제, 제목
+    ('識', '식'),   # 인식, 지식
+    ('発', '발'),   # 발생, 발전
+    ('浮', '부'),   # 부동, 부력
+    ('宙', '주'),   # 우주
+    ('連', '연'),   # 연결, 연속
+    ('測', '측'),   # 측정, 추측
+    ('技', '기'),   # 기술, 기능
+    ('術', '술'),   # 기술, 술법
+    ('進', '진'),   # 진행, 진출
+    ('牙', '아'),   # 상아
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -1153,81 +1052,149 @@ def _extract_context_snippets(text: str, char: str, window: int = 35, max_n: int
     return snippets
 
 
+_CJK_RUN = re.compile(
+    r'[一-鿿㐀-䶿豈-﫿぀-ゟ゠-ヿ]+'
+)
+
+
+def _extract_compound_cjk(text: str, chars: set[str]) -> list[str]:
+    """text에서 chars 중 하나라도 포함된 연속 CJK 문자열(2자+) 추출. 중복 제거."""
+    seen: set[str] = set()
+    result: list[str] = []
+    for m in _CJK_RUN.finditer(text):
+        compound = m.group(0)
+        if len(compound) > 1 and any(c in compound for c in chars) and compound not in seen:
+            seen.add(compound)
+            result.append(compound)
+    return result
+
+
+def _is_already_in_dict(compound: str) -> bool:
+    """복합어가 이미 HANJA/JAPANESE_REPLACEMENTS에 있으면 True."""
+    for src, _ in HANJA_REPLACEMENTS:
+        if src == compound:
+            return True
+    for src, _ in JAPANESE_REPLACEMENTS:
+        if src == compound:
+            return True
+    return False
+
+
+def _estimate_compound_translation(compound: str) -> str | None:
+    """
+    복합어 번역 추정: 각 문자의 한글 읽기를 이어붙임.
+    모든 문자의 읽기를 찾을 수 없으면 None 반환 → log만 기록.
+    """
+    parts: list[str] = []
+    for ch in compound:
+        reading: str | None = None
+        # 한자: 기존 복합어에서 해당 문자 읽기 추출
+        for src, dst in HANJA_REPLACEMENTS:
+            if ch in src and len(src) > 1:
+                idx = src.index(ch)
+                if idx < len(dst):
+                    reading = dst[idx]
+                    break
+        # 가나: _KANA_TABLE 참조
+        if reading is None and ch in _KANA_TABLE:
+            reading = _KANA_TABLE[ch]
+        if reading is None:
+            return None
+        parts.append(reading)
+    result = ''.join(parts)
+    return result if result else None
+
+
 def auto_heal_filter(
     remaining_hanja_chars: set[str],
     remaining_jp_chars: set[str],
     context_text: str = "",
 ) -> None:
     """
-    Detect and auto-add unknown Hanja/Japanese chars to the source file.
+    Detect unknown Hanja/Japanese and attempt compound-word auto-heal.
 
-    1. Check persistent log to skip already-healed chars
-    2. Try to extract Korean reading from existing compound words
-    3. Append new entries to hermes_filters.py (in sorted position)
-    4. Persist new entries to auto_heal_log.json
-    5. importlib.reload so changes take effect immediately
+    Strategy (v2 — compound-first):
+    - Single characters: log only, do NOT add to dictionary.
+      Single-char entries cause garbled output when the char appears in
+      non-matching contexts.
+    - Compound words (2+ CJK chars from context_text): extract, estimate
+      translation from per-char readings, add if translation is found.
+    - If no translation can be estimated: log only.
     """
     global HANJA_REPLACEMENTS, JAPANESE_REPLACEMENTS
 
     module_path = __file__
+    all_unknown = remaining_hanja_chars | remaining_jp_chars
     new_hanja: list[tuple[str, str]] = []
     new_jp: list[tuple[str, str]] = []
     timestamp = datetime.now().isoformat(timespec="seconds")
 
-    # --- Hanja: try to find reading, else '?' ---
+    # --- Phase 1: Log all single unknown chars (no dict entry) ---
     for ch in remaining_hanja_chars:
         key = f"hanja:{ch}"
         if key in _AUTO_HEAL_KNOWN:
             continue
         _AUTO_HEAL_KNOWN.add(key)
-        reading = _extract_reading_from_dict(ch)
-        # Only add to dictionary if a reading was found — empty-string entries
-        # permanently lock the char as "delete", defeating the fallback callback.
-        if reading:
-            new_hanja.append((ch, reading))
-
-        # Persist to log (regardless of whether a reading was found)
-        entry: dict = {
-            "r": reading or "",
-            "ts": timestamp,
-            "v": reading is not None,   # auto-verified if reading was found
-        }
+        entry: dict = {"r": "", "ts": timestamp, "v": False, "note": "single-char-skipped"}
         if context_text:
             snippets = _extract_context_snippets(context_text, ch)
             if snippets:
                 entry["ctx"] = snippets
         _auto_heal_log.setdefault("hanja", {})[ch] = entry
-        logger.info(f"[Auto-heal] Hanja '{ch}' → '{reading!r}' "
-                    f"({'added to dict' if reading else 'no reading — skipped, fallback handles'})")
+        logger.info("[Auto-heal] Hanja '%s': single-char, log only", ch)
 
-    # --- Japanese: try to find reading, else '?' (same as Hanja now) ---
     for ch in remaining_jp_chars:
         key = f"japanese:{ch}"
         if key in _AUTO_HEAL_KNOWN:
             continue
         _AUTO_HEAL_KNOWN.add(key)
-        reading = _extract_jp_reading_from_dict(ch)
-        if reading:
-            new_jp.append((ch, reading))
-
-        entry: dict = {
-            "r": reading or "",
-            "ts": timestamp,
-            "v": reading is not None,
-        }
+        entry = {"r": "", "ts": timestamp, "v": False, "note": "single-char-skipped"}
         if context_text:
             snippets = _extract_context_snippets(context_text, ch)
             if snippets:
                 entry["ctx"] = snippets
         _auto_heal_log.setdefault("japanese", {})[ch] = entry
-        logger.info(f"[Auto-heal] Japanese '{ch}' → '{reading!r}' "
-                    f"({'added to dict' if reading else 'no reading — skipped, fallback handles'})")
+        logger.info("[Auto-heal] Japanese '%s': single-char, log only", ch)
 
-    if not new_hanja and not new_jp:
-        return
+    # --- Phase 2: Extract compound words from context and register ---
+    if context_text and all_unknown:
+        compounds = _extract_compound_cjk(context_text, all_unknown)
+        for compound in compounds:
+            if _is_already_in_dict(compound):
+                continue
+            key = f"compound:{compound}"
+            if key in _AUTO_HEAL_KNOWN:
+                continue
+            _AUTO_HEAL_KNOWN.add(key)
+
+            translation = _estimate_compound_translation(compound)
+            entry = {
+                "r": translation or "",
+                "ts": timestamp,
+                "v": translation is not None,
+            }
+            snippets = _extract_context_snippets(context_text, compound[0])
+            if snippets:
+                entry["ctx"] = snippets
+
+            if translation:
+                is_jp = any('぀' <= c <= 'ヿ' for c in compound)
+                if is_jp:
+                    new_jp.append((compound, translation))
+                    _auto_heal_log.setdefault("japanese", {})[compound] = entry
+                else:
+                    new_hanja.append((compound, translation))
+                    _auto_heal_log.setdefault("hanja", {})[compound] = entry
+                logger.info("[Auto-heal] Compound '%s' → '%s' added to dict", compound, translation)
+            else:
+                _auto_heal_log.setdefault("hanja", {})[compound] = entry
+                logger.info("[Auto-heal] Compound '%s': no translation estimate, log only", compound)
 
     # --- Persist log to disk ---
     _save_auto_heal_log(_auto_heal_log)
+
+    if not new_hanja and not new_jp:
+        return
 
     # --- Read source, append new entries, rewrite ---
     with open(module_path, encoding="utf-8") as f:
@@ -1236,14 +1203,14 @@ def auto_heal_filter(
     lines = source.splitlines()
 
     def _insert_entry(src: list[str], marker: str, entries: list[tuple[str, str]]) -> list[str]:
-        """Insert new tuple entries after the marker line."""
+        """Insert new tuple entries before the marker line."""
         result = []
         inserted = False
         for line in reversed(src):
             if not inserted and line.rstrip().endswith(marker):
                 indent = " " * 4
-                for hanja, hangul in entries:
-                    result.append(f"{indent}('{hanja}', '{hangul}'),   # auto-heal")
+                for cjk, hangul in entries:
+                    result.append(f"{indent}('{cjk}', '{hangul}'),   # auto-heal:compound")
                 result.append(line)
                 inserted = True
             else:
@@ -1264,9 +1231,8 @@ def auto_heal_filter(
     importlib.reload(_hm)
     HANJA_REPLACEMENTS = _hm.HANJA_REPLACEMENTS
     JAPANESE_REPLACEMENTS = _hm.JAPANESE_REPLACEMENTS
-    # Sync the single-char reverse index so _cjk_to_hangul_fallback sees new entries.
     _rebuild_single_char_fallback()
-    logger.info("[Auto-heal] hermes_filters reloaded — new entries live")
+    logger.info("[Auto-heal] hermes_filters reloaded — compound entries live")
 
 def log_cyrillic_chars(chars: set[str], context_text: str = "") -> None:
     """
