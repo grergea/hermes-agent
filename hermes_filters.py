@@ -26,6 +26,8 @@ logger = logging.getLogger("hermes_filters")
 # e.g. ('这种情况', ...) must come before ('这', ...) to avoid '这种' leftover.
 # =============================================================================
 HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
+    # 12글자
+    ('请确认一下输出长度是否足够', '출력 길이가 충분한지 확인해 주세요'),
     # 5글자
     ('怎么处理这个问题', '어떻게 처리할 것인가'),
     # 4글자
@@ -172,12 +174,16 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('辺', '변'),
     ('素', '소'),
     ('要', '요'),
+    ('大多数', '대부분'),  # auto-heal: 158행 Most →大部分
+    ('空的', '비어 있는'),  # auto-heal: 192행 空的 → 저자명 맥락
     ('数', '수'),
     ('多', '다'),
     ('没', '않'),     # 没다있다 → 않는다있다 (没=않다, Chinese perfective)
     ('掉', '떨어질'), # 크래시掉다 → 크래시되었다
     ('层', '층'),     # 遗层면 → 유층면
     ('遗', '유'),     # 后遗 → 후유 (遗=유, simplified 遺)
+    ('意譯', '의역'),  # auto-heal: 意譯했으나 → 의역했지만
+    ('意', '의'),     # 意譯 → 의역 (의미의 의)
     # ('貌', '모습') 제거 — '전모'(全貌)의 일부로만 사용, 단독으로는几乎無用例
     # 실수高频 추가 한자
     ('检查', '점검'),
@@ -325,7 +331,16 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     # 3글자 신규
     ('직职能', '직능'),         # 직职能 수행 → 직능 수행 (중복 방지)
     ('有效性', '유효성'),       # 등록 전에 피드有效性 확인
-    # 2글자 신규
+    # 3글자 신규 (2026-05-06-blog-log)
+    ('联想到', '관련해서'),     # 직접联想到야만 → 직접 관련해서야만
+    ('记载', '기록'),           # Process 단계에 Phase 2 두 번 반복記載
+    # 2글자 신규 (2026-05-06-blog-log)
+    ('政治', '정치'),           # 政治과 경제의 얽힌 관계 / 政治적 발언
+    ('语气', '어투'),           # 단정语气 → 단정 어투
+    ('根基', '원인'),           # 인플레이션根基 → 인플레이션 원인
+    ('計略', '계략'),           # 선거計略 → 선거 계략
+    ('困境', '곤경'),           # 금리困境 → 금리 곤경
+    # 2글자 신규 (기존 유지)
     ('职能', '직능'),           # 직职能 수행
     ('主席', '의장'),           # 연준主席 물러나지 않겠다
     ('共和党', '공화당'),       # 공화당议员 ETF
@@ -449,7 +464,42 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     (' Related性と', '관련성과'),   # 관련성과 접속 ( Related성 already replaced → '관련성' + '과')
     ('中心', '센터'),
     ('其余', '기타'),
+    ('不符合', '일치하지 않는'), # Facts不符合 — 정치적 발언 가능성 높다
+    ('水准', '수준'),           # 오자 수정: 水槽 → 수준 (Chinese: standard/level)
     # AUTOHEAL:HANJA_END
+    ('用', '플'),   # auto-heal
+    ('调', '디'),   # auto-heal
+    ('度', '도'),   # auto-heal
+    ('输', '송'),   # auto-heal
+    ('下', '음'),   # auto-heal
+    ('是', '것'),   # auto-heal
+    ('一', '일'),   # auto-heal
+    ('时', ' '),   # auto-heal
+    ('请', '요'),   # auto-heal
+    ('合', '합'),   # auto-heal
+    ('载', '하'),   # auto-heal
+    ('確', '확'),   # auto-heal
+    ('成', '료'),   # auto-heal
+    ('功', '기'),   # auto-heal
+    ('認', '인'),   # auto-heal
+    ('略', '략'),   # auto-heal
+    ('困', '곤'),   # auto-heal
+    ('中', ' '),   # auto-heal
+    ('到', '았'),   # auto-heal
+    ('不', '다'),   # auto-heal
+    ('容', '내'),   # auto-heal
+    ('的', '된'),   # auto-heal
+    ('出', '출'),   # auto-heal
+    ('境', '경'),   # auto-heal
+    ('譯', '역'),   # auto-heal
+    ('意', '의'),   # auto-heal
+    ('内', ' '),   # auto-heal
+    ('空', '공'),   # auto-heal
+    ('件', '포'),   # auto-heal
+    ('的', '된'),   # auto-heal
+    ('数', ' '),   # auto-heal
+    ('大', '온'),   # auto-heal
+    ('空', '공'),   # auto-heal
     ('区', ''),   # auto-heal
     ('地', ''),   # auto-heal
     ('和', '화'),   # auto-heal
@@ -804,6 +854,10 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
+    ('う', '우'),   # auto-heal
+    ('ょ', '요'),   # auto-heal
+    ('て', '테'),   # auto-heal
+    ('き', '키'),   # auto-heal
     ('を', '오'),   # auto-heal
     ('れ', '레'),   # auto-heal
     ('す', '스'),   # auto-heal
