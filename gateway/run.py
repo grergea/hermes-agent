@@ -42,10 +42,13 @@ from hermes_filters import (
     HANJA_PATTERN,
     KANA_PATTERN,
     CYRILLIC_PATTERN,
+    ARABIC_PATTERN,
     _REMOVE_REMAINING_CJK,
     _REMOVE_CYRILLIC,
+    _REMOVE_ARABIC,
     _cjk_to_hangul_fallback,
     log_cyrillic_chars,
+    log_arabic_chars,
     filter_text,
     auto_heal_filter,
 )
@@ -5715,6 +5718,8 @@ class GatewayRunner:
             session_entry.needs_script_correction = None  # 플래그 리셋
             if _script_correction == 'cyrillic':
                 _script_desc = 'Cyrillic (Russian/Slavic) characters'
+            elif _script_correction == 'arabic':
+                _script_desc = 'Arabic script characters'
             else:
                 _script_desc = 'Hanja (Chinese characters)'
             correction_prompt = (
@@ -6672,6 +6677,17 @@ class GatewayRunner:
                 log_cyrillic_chars(set(remaining_cyrillic), context_text=response)
                 response = _REMOVE_CYRILLIC.sub('', response)
                 session_entry.needs_script_correction = "cyrillic"
+
+            # Arabic 즉시 제거 — 감지 시 로그 후 즉시 삭제
+            remaining_arabic = ARABIC_PATTERN.findall(response)
+            if remaining_arabic:
+                logger.warning(
+                    "[Filter] Arabic characters detected after filter: %s. Removing...",
+                    remaining_arabic[:5],
+                )
+                log_arabic_chars(set(remaining_arabic), context_text=response)
+                response = _REMOVE_ARABIC.sub('', response)
+                session_entry.needs_script_correction = "arabic"
 
             # If streaming already delivered the response, extract and
             # deliver any MEDIA: files before returning None.  Streaming
