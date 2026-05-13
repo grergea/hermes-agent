@@ -147,6 +147,7 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('数据', '데이터'),
     ('网络', '네트워크'),
     ('安全', '보안'),
+    ('末尾', '끝부분'),    # 파일末尾에 주요 누락 항목들을 추가합니다.
     ('管理', '관리'),
     ('配置', '설정'),
     ('功能', '기능'),
@@ -234,7 +235,7 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('場合', '경우'),
     ('環境音', '환경음'),
     ('早些时候', '이른 시간'),
-    ('聊了', '놀랐다'),
+    ('聊了', '얘기했다'),
     ('確認', '확인'),
     ('保存', '보존'),
     ('解释', '해석'),
@@ -380,7 +381,7 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('职能', '직능'),           # 직职能 수행
     ('主席', '의장'),           # 연준主席 물러나지 않겠다
     ('共和党', '공화당'),       # 공화당议员 ETF
-    ('民主党', '여론당'),       # 民主党ETF (미국 민주주의당)
+    ('民主党', '민주당'),       # 민주당議員 ETF (미국 민주당)
     ('议员', '위원'),           # 미국议员 ETF — 하원/상원 의원
     ('框架', '프레임워크'),     # 법적框架 속에서의 전략적 발언
     ('覆盖', '커버'),           # 필터 사전覆盖率高 → 커버율
@@ -496,7 +497,7 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('没有问题', '문제없다'),   # 스킬 설정没有问题 → 스킬 설정 문제없다
     ('関連性と', '관련성과'),   # 관련성과 접속 (と→과)
     ('関連性', '관련성'),   # 관련 + 性 (관련보다 먼저 매칭)
-    ('接客', '접속'),       # 接+客 (U+5BA2) - connection
+    ('接客', '접객'),       # 接+客 (U+5BA2) - customer service
     (' Related性と', '관련성과'),   # 관련성과 접속 ( Related성 already replaced → '관련성' + '과')
     ('中心', '센터'),
     ('其余', '기타'),
@@ -517,7 +518,15 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('費', '비'),               # 물류費 → 물류비
     ('効', '효'),               # 効果의 効 단독
     ('绰', '수록'),             # 갈绰 → 갈수록 (LLM 오출력 패턴)
+    # log ctx 기반 추가 (2026-05-08)
+    ('其中どれ感兴趣ですか', '그 중 어느 것에 관심이 있으신가요'),  # 9글자 최우선 — 전체 복합문 처리
+    ('感兴趣ですか', '관심이 있으신가요'),   # CJK+kana — HANJA에서 먼저 처리 (7글자)
+    ('興味がありませんか', '흥미 없으신가요'),   # 일본어 興味+がありませんか — 부정 의문 (7글자)
+    ('感兴趣', '관심이 있는'),              # 感만 남는 문제 해결 (3글자)
+    ('文件', '파일'),                       # 중국어 파일 — 첨부싷고 싶은 文件 경로
     # AUTOHEAL:HANJA_END
+    ('其中', '그중'),   # 중국어 "그 중에서" — 9글자 복합어가 먼저 매칭, 단독 출현 시 '그중'으로 번역
+    ('興味', '흥미'),   # 일본어 興味(興趣와 혼용) — 한국어 '흥미'
     # --- 올바른 단일 문자 매핑 (정리 후 유지) ---
     ('合', '합'),   # 합계, 결합
     ('確', '확'),   # 확인
@@ -556,6 +565,16 @@ HANJA_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('術', '술'),   # 기술, 술법
     ('進', '진'),   # 진행, 진출
     ('牙', '아'),   # 상아
+    ('を返さない場合です', '반환하지 않는 경우입니다'),  # を 포함 전체 복합어 (5글자, 먼저 매칭)
+    ('返さない場合です', '반환하지 않는 경우입니다'),   # Slack API가 정확한 MIME 타입を返さない場合입니다 — 혼합 compound, HANJA에서 먼저 처리
+    ('返さない', '반환하지 않는'),  # 단독 출현 처리
+    ('重点的に', '집중적으로'),   # 해당 시간대의 로그를重点的に 확인해볼 수 있습니다
+    ('回过头来', '돌이켜보면'),   # 중국어 "다시 생각해보면" — ctx: 협상回过头来 → 협상 결렬로
+    ('混合', '혼합'),   # 혼합复合어이므로 → 혼합 복합어이므로
+    ('复合어', '복합어'),   # 두 건とも复合어優先 원칙에 따라
+    ('優先', '우선'),   # 複合어優先 → 복합어 우선 (とも复合어優先 처리)
+    ('重点', '중점'),   # 중국어/일본어 "중점, 핵심" — 重点的に의 핵심 단어
+    ('激怒', '격노'),   # 중국어/일본어 "격노, 분노" — ctx: 데激怒 → 에 분노한
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -574,7 +593,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('那样的话', '저렇게'),
     ('を追加する', '를 추가하다'),
     ('コンтекストで', '컨텍스트에서'),
-    ('过滤器', '필ilter'),
+    ('过滤器', '필터'),
     # 4글자
     ('より狭い', '더 좁은'),
     ('狭い', ' 좁은'),
@@ -761,6 +780,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('テ', '테'),
     ('プ', '프'),
     (chr(0x30CB), ' japan'),
+    ('ですか', '인가요'),  # 의문형 — ですか? → 인가요? (です→입니다 보다 길어 먼저 매칭)
     ('です', '입니다'),
     # Latin/Кириллица 혼입
     (' надо', ' 필요'),
@@ -807,32 +827,30 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
     ('ナ', ''),
     ('タ', ''),
     # AUTOHEAL:JAPANESE_END
-    ('う', '우'),   # auto-heal
-    ('ょ', '요'),   # auto-heal
-    ('て', '테'),   # auto-heal
-    ('き', '키'),   # auto-heal
-    ('を', '오'),   # auto-heal
-    ('れ', '레'),   # auto-heal
-    ('す', '스'),   # auto-heal
-    ('ン', '응'),   # auto-heal
-    ('て', '테'),   # auto-heal
-    ('い', '이'),   # auto-heal
-    ('ま', '마'),   # auto-heal
-    ('ス', '스'),   # auto-heal
-    ('バ', '바'),   # auto-heal
-    ('ラ', '라'),   # auto-heal
-    ('コ', '코'),   # auto-heal
-    ('ー', ''),     # auto-heal (장음부호, 단독 → 삭제)
-    ('ュ', '유'),   # auto-heal (소문자 ュ 근사값)
-    ('リ', '리'),   # auto-heal
-    ('キ', '키'),   # auto-heal
-    ('メ', '메'),   # auto-heal
-    ('ン', '응'),   # auto-heal
-    ('ト', '토'),   # auto-heal
-    ('エ', '에'),   # auto-heal
-    ('ク', '쿠'),   # auto-heal
+    ('したい', '하고 싶은'),   # 첨부したい 파일
+    ('したいファイル', '하고 싶은 파일'),   # 첨부したいファイル 경로
+    ('ファイル', '파일'),   # 첨부したいファイル 경로 — 파일로 치환
+    ('どれ', '어느'),   # auto-heal:compound
+    ('とも', '모두'),   # 두 건とも复合어優先 — Japanese particle "both/all"
+    # 이하: AUTOHEAL 이전 ''(삭제)와 충돌하지 않는 가타카나만 유지
+    # (う て き い ま を れ す 는 AUTOHEAL 이전 삭제 항목과 충돌 → 제거)
+    ('ょ', '요'),   # auto-heal (이전 없음)
+    ('ン', '응'),   # auto-heal (이전 없음)
+    ('ス', '스'),   # auto-heal (이전 없음)
+    ('バ', '바'),   # auto-heal (이전 없음)
+    ('ラ', '라'),   # auto-heal (이전 없음)
+    ('コ', '코'),   # auto-heal (이전 없음)
+    ('ー', ''),     # auto-heal 장음부호 단독 → 삭제 (이전 없음)
+    ('ュ', '유'),   # auto-heal 소문자 ュ (이전 없음)
+    ('リ', '리'),   # auto-heal (이전 없음)
+    ('キ', '키'),   # auto-heal (이전 없음)
+    ('メ', '메'),   # auto-heal (이전 없음)
+    ('ト', '토'),   # auto-heal (이전 없음)
+    ('エ', '에'),   # auto-heal (이전 없음)
+    ('ク', '쿠'),   # auto-heal (이전 없음)
     ('クエリ', '쿼리'),   # 복합어 — 쿼리
     ('宙に浮いた', '떠다니는'),   # 관용구 — 떠다니는
+    # === 복합어 추가 (2026-05-08) ===
 ], key=lambda x: -len(x[0]))
 
 # =============================================================================
@@ -841,6 +859,7 @@ JAPANESE_REPLACEMENTS: List[Tuple[str, str]] = sorted([
 HANJA_PATTERN = re.compile(r'[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]')
 KANA_PATTERN = re.compile(r'[\u3040-\u309f\u30a0-\u30ff]')
 CYRILLIC_PATTERN = re.compile(r'[\u0400-\u04ff\u0500-\u052f]')
+ARABIC_PATTERN = re.compile(r'[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff]')
 
 # Fallback: translate or remove any remaining CJK/Kana characters not caught by dictionary.
 # _cjk_to_hangul_fallback (defined below) is used as the sub callback \u2014 it tries the
@@ -862,6 +881,13 @@ _REMOVE_CYRILLIC = re.compile(
     r'\u0500-\u052f]'   # Cyrillic Supplement
 )
 
+# Fallback: remove Arabic characters (no dictionary mapping — always delete).
+_REMOVE_ARABIC = re.compile(
+    r'[\u0600-\u06ff'   # Arabic
+    r'\u0750-\u077f'     # Arabic Supplement
+    r'\u08a0-\u08ff]'   # Arabic Extended-A
+)
+
 
 # Single-char reverse index: built from HANJA/JAPANESE_REPLACEMENTS at module load time.
 # Maps single-char CJK/Kana source → Korean target for _cjk_to_hangul_fallback callback.
@@ -870,24 +896,34 @@ _SINGLE_CHAR_FALLBACK: dict[str, str] = {}
 
 
 def _rebuild_single_char_fallback() -> None:
-    """Rebuild _SINGLE_CHAR_FALLBACK from current HANJA/JAPANESE_REPLACEMENTS.
+    """Rebuild _SINGLE_CHAR_FALLBACK from _KANA_TABLE + HANJA/JAPANESE_REPLACEMENTS.
 
-    Called once at module load and again after auto_heal_filter reloads the module,
-    so newly healed single-char entries are immediately usable by the sub callback.
+    Priority (ascending, last write wins):
+      1. _KANA_TABLE  — 히라가나/가타카나 기본 음역 (모든 글자 커버)
+      2. HANJA_REPLACEMENTS  — 한자 단독 매핑
+      3. JAPANESE_REPLACEMENTS  — 명시적 가나 매핑 (최고 우선순위)
+
+    Called once after _KANA_TABLE is defined, and again after auto_heal_filter
+    reloads the module so newly healed single-char entries are immediately live.
+
+    _KANA_TABLE을 포함함으로써 JAPANESE_REPLACEMENTS에 없는 단독 가나 글자가
+    fallback 단계에서 삭제되지 않고 한국어 외래어 표기로 처리됩니다.
     """
     global _SINGLE_CHAR_FALLBACK
     table: dict[str, str] = {}
+    # 1. KANA_TABLE 기본값 (빈 값 = 촉음·장음부호 → 삭제이므로 제외)
+    kana_table = globals().get('_KANA_TABLE', {})
+    table.update({k: v for k, v in kana_table.items() if v})
+    # 2. HANJA 덮어쓰기
     for src, dst in HANJA_REPLACEMENTS:
         if len(src) == 1 and dst:
             table[src] = dst
+    # 3. JAPANESE 덮어쓰기 (최고 우선순위)
     for src, dst in JAPANESE_REPLACEMENTS:
         if len(src) == 1 and dst:
             table[src] = dst
     _SINGLE_CHAR_FALLBACK = table
     logger.debug("[CJK-fallback] single-char table rebuilt: %d entries", len(table))
-
-
-_rebuild_single_char_fallback()
 
 
 def _cjk_to_hangul_fallback(match: re.Match) -> str:
@@ -951,6 +987,9 @@ def filter_text(text: str) -> str:
 
     # ---- remove Cyrillic characters ----
     text = _REMOVE_CYRILLIC.sub('', text)
+
+    # ---- remove Arabic characters ----
+    text = _REMOVE_ARABIC.sub('', text)
 
     # ---- restore code blocks (intentionally unfiltered — see docstring) ----
     for key, value in placeholders.items():
@@ -1078,6 +1117,9 @@ _KANA_TABLE: dict[str, str] = {
     'ー': '',
 }
 
+# _KANA_TABLE 정의 완료 후 fallback 테이블 빌드 (KANA_TABLE 포함)
+_rebuild_single_char_fallback()
+
 
 def _extract_jp_reading_from_dict(char: str) -> str | None:
     """한국어 읽기를 정적 kana 테이블 → 복합어 순으로 추출 시도."""
@@ -1138,7 +1180,13 @@ def _estimate_compound_translation(compound: str) -> str | None:
     """
     복합어 번역 추정: 각 문자의 한글 읽기를 이어붙임.
     모든 문자의 읽기를 찾을 수 없으면 None 반환 → log만 기록.
+
+    가나(히라가나/가타카나)를 포함한 복합어는 추정하지 않음.
+    가나 음역("도레", "시타이" 등)은 의미 없는 한글 발음 일본어이므로,
+    올바른 번역(예: "어느", "하고 싶은")은 사람이 직접 사전에 추가해야 함.
     """
+    if any('぀' <= c <= 'ヿ' for c in compound):
+        return None
     parts: list[str] = []
     for ch in compound:
         reading: str | None = None
@@ -1318,6 +1366,41 @@ def log_cyrillic_chars(chars: set[str], context_text: str = "") -> None:
             if snippets and len(existing_ctx) < 5:
                 existing_ctx.extend(snippets)
                 log["cyrillic"][ch]["ctx"] = existing_ctx
+
+    _save_auto_heal_log(log)
+    _auto_heal_log = log
+
+
+def log_arabic_chars(chars: set[str], context_text: str = "") -> None:
+    """
+    Persist detected Arabic characters to auto_heal_log.json for future analysis.
+    Does NOT modify source code — logging only.
+    """
+    global _auto_heal_log
+
+    if not chars:
+        return
+
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    log = _load_auto_heal_log()
+    if "arabic" not in log:
+        log["arabic"] = {}
+
+    for ch in chars:
+        snippets = _extract_context_snippets(context_text, ch) if context_text else []
+        if ch not in log["arabic"]:
+            log["arabic"][ch] = {
+                "first_seen": timestamp,
+                "count": 1,
+                "ctx": snippets,
+            }
+            logger.info("[Arabic-log] new char recorded: %r", ch)
+        else:
+            log["arabic"][ch]["count"] = log["arabic"][ch].get("count", 0) + 1
+            existing_ctx = log["arabic"][ch].get("ctx", [])
+            if snippets and len(existing_ctx) < 5:
+                existing_ctx.extend(snippets)
+                log["arabic"][ch]["ctx"] = existing_ctx
 
     _save_auto_heal_log(log)
     _auto_heal_log = log
