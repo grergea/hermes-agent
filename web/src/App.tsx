@@ -80,6 +80,14 @@ function RootRedirect() {
   return <Navigate to="/sessions" replace />;
 }
 
+function UnknownRouteFallback({ pluginsLoading }: { pluginsLoading: boolean }) {
+  if (pluginsLoading) {
+    // Render nothing during the plugin-load window — a spinner here would just flash.
+    return null;
+  }
+  return <Navigate to="/sessions" replace />;
+}
+
 const CHAT_NAV_ITEM: NavItem = {
   path: "/chat",
   labelKey: "chat",
@@ -465,7 +473,7 @@ export default function App() {
           >
             <div
               className={cn(
-                "flex h-14 shrink-0 items-center justify-between gap-2",
+                "flex h-14 shrink-0 items-center justify-between gap-2 px-4",
                 "border-b border-current/20",
               )}
             >
@@ -582,7 +590,9 @@ export default function App() {
                   ))}
                   <Route
                     path="*"
-                    element={<Navigate to="/sessions" replace />}
+                    element={
+                      <UnknownRouteFallback pluginsLoading={pluginsLoading} />
+                    }
                   />
                 </Routes>
 
