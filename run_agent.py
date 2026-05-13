@@ -5960,7 +5960,7 @@ class AIAgent:
             stable_parts.append(COMPUTER_USE_GUIDANCE)
 
         # Korean language purity — always injected for Korean-speaking users
-        prompt_parts.append(KOREAN_LANGUAGE_RULE)
+        stable_parts.append(KOREAN_LANGUAGE_RULE)
 
         nous_subscription_prompt = build_nous_subscription_prompt(self.valid_tool_names)
         if nous_subscription_prompt:
