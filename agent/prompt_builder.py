@@ -141,7 +141,7 @@ DEFAULT_AGENT_IDENTITY = (
     "Be targeted and efficient in your exploration and investigations."
 )
 
-# Korean language purity rule — injected into all Korean-user sessions
+# Korean language purity rule — injected into all sessions (main agent + sub-agents)
 KOREAN_LANGUAGE_RULE = (
     "\n\n# CRITICAL: Korean-Only Language Rule\n"
     "YOU MUST RESPOND IN KOREAN (HANGUL) ONLY. This is a non-negotiable hard requirement.\n"

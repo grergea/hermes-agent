@@ -32,6 +32,7 @@ from agent.prompt_builder import (
     GOOGLE_MODEL_OPERATIONAL_GUIDANCE,
     HERMES_AGENT_HELP_GUIDANCE,
     KANBAN_GUIDANCE,
+    KOREAN_LANGUAGE_RULE,
     MEMORY_GUIDANCE,
     OPENAI_MODEL_EXECUTION_GUIDANCE,
     PLATFORM_HINTS,
@@ -210,6 +211,8 @@ def build_system_prompt_parts(agent: Any, system_message: Optional[str] = None) 
                 stable_parts.append(_entry.platform_hint)
         except Exception:
             pass
+
+    stable_parts.append(KOREAN_LANGUAGE_RULE.strip())
 
     # ── Context tier (cwd-dependent, may change between sessions) ─
     context_parts: List[str] = []

@@ -795,13 +795,6 @@ def write_file_tool(path: str, content: str, task_id: str = "default") -> str:
     sensitive_err = _check_sensitive_path(path, task_id)
     if sensitive_err:
         return tool_error(sensitive_err)
-    # Hanja/Japanese filter — .md 파일만 적용 (코드·설정 파일 제외)
-    if path.endswith(".md"):
-        try:
-            from hermes_filters import filter_text as _filter_text
-            content = _filter_text(content)
-        except ImportError:
-            logger.warning("hermes_filters unavailable in write_file(%s): Hanja filter skipped", path)
     if _is_internal_file_status_text(content):
         return tool_error(
             "Refusing to write internal read_file status text as file content. "
@@ -916,56 +909,11 @@ def patch_tool(mode: str = "replace", path: str = None, old_string: str = None,
                     return tool_error("path required")
                 if old_string is None or new_string is None:
                     return tool_error("old_string and new_string required")
-                # Hanja/Japanese filter — .md 파일만 적용
-                if path.endswith(".md"):
-                    try:
-                        from hermes_filters import filter_text as _filter_text
-                        new_string = _filter_text(new_string)
-                    except ImportError:
-                        logger.warning("hermes_filters unavailable in patch replace(%s): Hanja filter skipped", path)
                 result = file_ops.patch_replace(path, old_string, new_string, replace_all)
             elif mode == "patch":
                 if not patch:
                     return tool_error("patch content required")
                 result = file_ops.patch_v4a(patch)
-                # Hanja/Japanese filter — V4A mode: patch string을 직접 파싱하면
-                # patch 형식이 깨질 수 있어 기록 완료 후 .md 파일을 재필터링함.
-                if not result.to_dict().get("error"):
-                    _md_paths = [p for p in _paths_to_check if p.endswith(".md")]
-                    # 2번 맹점 보완: 기본 파서(V4A 헤더 정규식)가 .md 경로를 찾지 못한 경우 폴백
-                    if not _md_paths and patch:
-                        import re as _re_fb
-                        _fb_paths = list(dict.fromkeys(
-                            p for p in _re_fb.findall(r'\S+\.md', patch)
-                            if os.path.exists(p)
-                        ))
-                        if _fb_paths:
-                            logger.warning(
-                                "V4A path parser found 0 .md paths; fallback found %d: %s",
-                                len(_fb_paths), _fb_paths,
-                            )
-                            _md_paths = _fb_paths
-                    if _md_paths:
-                        try:
-                            from hermes_filters import filter_text as _filter_text
-                            for _md_p in _md_paths:
-                                if os.path.exists(_md_p):
-                                    with open(_md_p, encoding="utf-8") as _f:
-                                        _raw = _f.read()
-                                    _filtered = _filter_text(_raw)
-                                    if _filtered != _raw:
-                                        with open(_md_p, "w", encoding="utf-8") as _f:
-                                            _f.write(_filtered)
-                        except ImportError:
-                            logger.warning(
-                                "hermes_filters unavailable in patch V4A: Hanja filter skipped for %s",
-                                _md_paths,
-                            )
-                        except OSError as _ose:
-                            logger.warning(
-                                "hermes_filters OSError in patch V4A (%s): Hanja filter partially skipped",
-                                _ose,
-                            )
             else:
                 return tool_error(f"Unknown mode: {mode}")
 
